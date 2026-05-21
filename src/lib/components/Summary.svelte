@@ -63,8 +63,30 @@
 
 	@media (max-width: 600px) {
 		.summary {
-			gap: 1rem;
+			flex-direction: column;
+			gap: 0.5rem;
+			padding: 0.75rem 0;
+		}
+
+		.row {
+			flex-direction: row;
 			justify-content: space-between;
+			align-items: center;
+			padding: 0.25rem 0;
+		}
+
+		.total-row {
+			border-top: 1px solid var(--border);
+			padding-top: 0.5rem;
+			margin-top: 0.25rem;
+		}
+
+		.label {
+			flex-shrink: 0;
+		}
+
+		.value {
+			text-align: right;
 		}
 	}
 </style>
