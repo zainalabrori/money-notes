@@ -3,7 +3,13 @@
 	import type { Note } from '../db/dexie';
 	import Backup from './Backup.svelte';
 
-	let { selectedNoteId = $bindable() }: { selectedNoteId: number | null } = $props();
+	let {
+		selectedNoteId = $bindable(),
+		isSidebarVisible = $bindable()
+	}: {
+		selectedNoteId: number | null;
+		isSidebarVisible: boolean;
+	} = $props();
 
 	let allNotes = $state<Note[]>([]);
 	let searchQuery = $state('');
@@ -56,10 +62,13 @@
 	}
 </script>
 
-<aside class="sidebar">
+<aside class="sidebar" class:collapsed={!isSidebarVisible}>
 	<div class="sidebar-header">
 		<button onclick={createNote} class="new-btn">
 			<span>+</span> New Note
+		</button>
+		<button onclick={() => (isSidebarVisible = false)} class="toggle-btn" title="Close Sidebar (Ctrl+B)">
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left-close"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>
 		</button>
 	</div>
 
@@ -122,14 +131,25 @@
 		flex-direction: column;
 		background: var(--bg-primary);
 		flex-shrink: 0;
+		transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-right-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.sidebar.collapsed {
+		width: 0;
+		margin-left: -260px;
+		border-right-color: transparent;
+		overflow: hidden;
 	}
 
 	.sidebar-header {
 		padding: 1rem;
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
 	}
 
 	.new-btn {
-		width: 100%;
+		flex: 1;
 		padding: 0.6rem;
 		background: var(--bg-tertiary);
 		color: var(--text-primary);
@@ -142,6 +162,25 @@
 		font-weight: 600;
 	}
 
+	.toggle-btn {
+		background: none;
+		border: 1px solid var(--border);
+		color: var(--text-secondary);
+		padding: 0.5rem;
+		border-radius: 6px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.toggle-btn:hover {
+		color: var(--text-primary);
+		background: var(--bg-secondary);
+		border-color: var(--accent);
+	}
+
 	.new-btn span {
 		font-size: 1.2rem;
 		line-height: 1;
@@ -150,6 +189,24 @@
 	.new-btn:hover {
 		background: var(--selection);
 		border-color: var(--accent);
+	}
+
+	@media (max-width: 600px) {
+		.sidebar {
+			position: absolute;
+			z-index: 10;
+			height: 100%;
+			box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
+			left: 0;
+			transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		}
+
+		.sidebar.collapsed {
+			transform: translateX(-100%);
+			width: 260px;
+			margin-left: 0;
+			border-right: 1px solid var(--border);
+		}
 	}
 
 	.filters {

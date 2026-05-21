@@ -38,8 +38,6 @@
 
 	:global(*) {
 		box-sizing: border-box;
-		/* No animations for speed */
-		transition: none !important;
 	}
 
 	:global(input, textarea, select, button) {

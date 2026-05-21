@@ -2,6 +2,7 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Editor from '$lib/components/Editor.svelte';
 	import { notes } from '$lib/stores/notes';
+	import { fade } from 'svelte/transition';
 
 	let selectedNoteId = $state<number | null>(null);
 	let isSidebarVisible = $state(true);
@@ -28,15 +29,19 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="app-container">
+	<Sidebar bind:selectedNoteId bind:isSidebarVisible />
+
 	{#if isSidebarVisible}
-		<Sidebar bind:selectedNoteId />
+		<div class="sidebar-backdrop" onclick={toggleSidebar} role="none" transition:fade={{ duration: 150 }}></div>
 	{/if}
 
 	<main class="main-content" class:full-width={!isSidebarVisible}>
 		<header class="top-bar">
-			<button class="icon-btn" onclick={toggleSidebar} title="Toggle Sidebar (Ctrl+B)">
-				{isSidebarVisible ? '←' : '→'}
-			</button>
+			{#if !isSidebarVisible}
+				<button class="sidebar-toggle-btn" onclick={toggleSidebar} title="Open Sidebar (Ctrl+B)" transition:fade={{ duration: 150 }}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left-open"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
+				</button>
+			{/if}
 			{#if !selectedNoteId}
 				<span class="placeholder-text">Money Notes</span>
 			{/if}
@@ -76,21 +81,23 @@
 		height: 48px;
 	}
 
-	.icon-btn {
-		background: none;
-		border: none;
+	.sidebar-toggle-btn {
+		background: var(--bg-secondary);
+		border: 1px solid var(--border);
 		color: var(--text-secondary);
-		font-size: 1.2rem;
-		padding: 4px 8px;
+		padding: 6px 10px;
+		border-radius: 6px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border-radius: 4px;
+		cursor: pointer;
+		transition: all 0.2s ease;
 	}
 
-	.icon-btn:hover {
+	.sidebar-toggle-btn:hover {
 		color: var(--text-primary);
-		background: var(--bg-secondary);
+		background: var(--bg-tertiary);
+		border-color: var(--accent);
 	}
 
 	.placeholder-text {
@@ -119,16 +126,25 @@
 		color: var(--accent);
 	}
 
+	.sidebar-backdrop {
+		display: none;
+	}
+
 	@media (max-width: 600px) {
 		.app-container {
 			position: relative;
 		}
 
-		:global(.sidebar) {
-			position: absolute;
-			z-index: 10;
-			height: 100%;
-			box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
+		.sidebar-backdrop {
+			display: block;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			background: rgba(0, 0, 0, 0.4);
+			backdrop-filter: blur(2px);
+			z-index: 9;
 		}
 	}
 </style>
