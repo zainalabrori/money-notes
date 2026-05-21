@@ -79,6 +79,7 @@
 <style>
 	.editor-container {
 		flex: 1;
+		min-height: 0;
 		display: flex;
 		flex-direction: column;
 		padding: 1.5rem 2rem;
@@ -86,7 +87,6 @@
 		max-width: 900px;
 		margin: 0 auto;
 		width: 100%;
-		height: 100%;
 	}
 
 	.title-input {
