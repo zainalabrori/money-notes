@@ -1,7 +1,7 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
-	import { pwa } from '$lib/stores/pwa';
+	import { pwa } from '$lib/stores/pwa.svelte';
 	import { pwaInfo } from 'virtual:pwa-info';
 
 	let { children } = $props();

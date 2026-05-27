@@ -3,7 +3,7 @@
 	import Editor from '$lib/components/Editor.svelte';
 	import { notes } from '$lib/stores/notes';
 	import { fade } from 'svelte/transition';
-	import { pwa } from '$lib/stores/pwa';
+	import { pwa } from '$lib/stores/pwa.svelte';
 
 	let selectedNoteId = $state<number | null>(null);
 	let isSidebarVisible = $state(true);
