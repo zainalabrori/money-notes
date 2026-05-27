@@ -67,8 +67,8 @@ export async function importFromJSON(file: File): Promise<number> {
 				// Here we choose to add them as new entries or we could use put to update
 				await db.transaction('rw', db.notes, async () => {
 					for (const note of importedNotes) {
-						// Remove ID to avoid conflicts if importing into a different DB state, 
-						// or keep it if you want an exact mirror. 
+						// Remove ID to avoid conflicts if importing into a different DB state,
+						// or keep it if you want an exact mirror.
 						// For backup/restore, we'll use 'put' to preserve/overwrite.
 						await db.notes.put(note);
 					}

@@ -1,4 +1,4 @@
-import Dexie, { type Table } from "dexie";
+import Dexie, { type Table } from 'dexie';
 
 export interface Note {
 	id?: number;
@@ -13,10 +13,10 @@ export class MoneyDB extends Dexie {
 	notes!: Table<Note, number>;
 
 	constructor() {
-		super("money_notes");
+		super('money_notes');
 
 		this.version(2).stores({
-			notes: "++id, title, *tags, createdAt, updatedAt"
+			notes: '++id, title, *tags, createdAt, updatedAt'
 		});
 	}
 }

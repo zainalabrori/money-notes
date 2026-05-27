@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Editor from '$lib/components/Editor.svelte';
+	import Dashboard from '$lib/components/Dashboard.svelte';
 	import { notes } from '$lib/stores/notes';
 	import { fade } from 'svelte/transition';
 	import { pwa } from '$lib/stores/pwa.svelte';
@@ -33,25 +34,72 @@
 	<Sidebar bind:selectedNoteId bind:isSidebarVisible />
 
 	{#if isSidebarVisible}
-		<div class="sidebar-backdrop" onclick={toggleSidebar} role="none" transition:fade={{ duration: 150 }}></div>
+		<div
+			class="sidebar-backdrop"
+			onclick={toggleSidebar}
+			role="none"
+			transition:fade={{ duration: 150 }}
+		></div>
 	{/if}
 
 	<main class="main-content" class:full-width={!isSidebarVisible}>
 		<header class="top-bar">
 			{#if !isSidebarVisible}
-				<button class="sidebar-toggle-btn" onclick={toggleSidebar} title="Open Sidebar (Ctrl+B)" transition:fade={{ duration: 150 }}>
-					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panel-left-open"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/></svg>
+				<button
+					class="sidebar-toggle-btn"
+					onclick={toggleSidebar}
+					title="Open Sidebar (Ctrl+B)"
+					transition:fade={{ duration: 150 }}
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="lucide lucide-panel-left-open"
+						><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /><path
+							d="m14 9 3 3-3 3"
+						/></svg
+					>
 				</button>
 			{/if}
-			{#if !selectedNoteId}
+			
+			<div class="brand-logo" onclick={() => selectedNoteId = null} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (selectedNoteId = null)}>
+				<div class="logo-mark">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+				</div>
 				<span class="placeholder-text">Money Notes</span>
-			{/if}
+			</div>
 
 			<div class="spacer"></div>
 
 			{#if pwa.isInstallable}
-				<button class="install-btn" onclick={() => pwa.install()} title="Install App" transition:fade={{ duration: 150 }}>
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+				<button
+					class="install-btn"
+					onclick={() => pwa.install()}
+					title="Install App"
+					transition:fade={{ duration: 150 }}
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="lucide lucide-download"
+						><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline
+							points="7 10 12 15 17 10"
+						/><line x1="12" x2="12" y1="15" y2="3" /></svg
+					>
 					<span>Install App</span>
 				</button>
 			{/if}
@@ -60,9 +108,7 @@
 		{#if selectedNoteId}
 			<Editor noteId={selectedNoteId} />
 		{:else}
-			<div class="empty-state">
-				<p>Select a note or press <code>Ctrl+N</code></p>
-			</div>
+			<Dashboard bind:selectedNoteId />
 		{/if}
 	</main>
 </div>
@@ -111,32 +157,33 @@
 		border-color: var(--accent);
 	}
 
-	.placeholder-text {
-		color: var(--text-secondary);
-		font-weight: 600;
-		font-size: 0.9rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
+	.brand-logo {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		cursor: pointer;
+		outline: none;
+		user-select: none;
 	}
 
-	.empty-state {
-		flex: 1;
+	.logo-mark {
+		width: 28px;
+		height: 28px;
+		background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+		color: white;
+		border-radius: 8px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--text-secondary);
-		flex-direction: column;
-		gap: 1rem;
+		box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
 	}
 
-	code {
-		background: var(--bg-secondary);
-		padding: 2px 6px;
-		border-radius: 4px;
-		border: 1px solid var(--border);
-		color: var(--accent);
+	.placeholder-text {
+		color: var(--text-primary);
+		font-weight: 700;
+		font-size: 0.95rem;
+		letter-spacing: -0.01em;
 	}
-
 	.sidebar-backdrop {
 		display: none;
 	}
@@ -146,7 +193,11 @@
 	}
 
 	.install-btn {
-		background: linear-gradient(135deg, rgba(187, 134, 252, 0.1) 0%, rgba(187, 134, 252, 0.05) 100%);
+		background: linear-gradient(
+			135deg,
+			rgba(187, 134, 252, 0.1) 0%,
+			rgba(187, 134, 252, 0.05) 100%
+		);
 		border: 1px dashed var(--accent);
 		color: var(--accent);
 		padding: 6px 12px;
