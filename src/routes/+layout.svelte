@@ -1,12 +1,30 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
+	import { onMount } from 'svelte';
+	import { pwa } from '$lib/stores/pwa';
+	import { pwaInfo } from 'virtual:pwa-info';
 
 	let { children } = $props();
+
+	let webManifestLink = $derived(pwaInfo ? pwaInfo.webManifest.linkTag : '');
+
+	onMount(() => {
+		const handleBeforeInstallPrompt = (e: Event) => {
+			e.preventDefault();
+			pwa.setPrompt(e);
+		};
+
+		window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+		return () => {
+			window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+		};
+	});
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<link rel="manifest" href="/manifest.webmanifest" />
+	{@html webManifestLink}
 	<meta name="theme-color" content="#121212" />
 </svelte:head>
 

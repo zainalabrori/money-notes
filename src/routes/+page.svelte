@@ -3,6 +3,7 @@
 	import Editor from '$lib/components/Editor.svelte';
 	import { notes } from '$lib/stores/notes';
 	import { fade } from 'svelte/transition';
+	import { pwa } from '$lib/stores/pwa';
 
 	let selectedNoteId = $state<number | null>(null);
 	let isSidebarVisible = $state(true);
@@ -44,6 +45,15 @@
 			{/if}
 			{#if !selectedNoteId}
 				<span class="placeholder-text">Money Notes</span>
+			{/if}
+
+			<div class="spacer"></div>
+
+			{#if pwa.isInstallable}
+				<button class="install-btn" onclick={() => pwa.install()} title="Install App" transition:fade={{ duration: 150 }}>
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+					<span>Install App</span>
+				</button>
 			{/if}
 		</header>
 
@@ -129,6 +139,46 @@
 
 	.sidebar-backdrop {
 		display: none;
+	}
+
+	.spacer {
+		flex: 1;
+	}
+
+	.install-btn {
+		background: linear-gradient(135deg, rgba(187, 134, 252, 0.1) 0%, rgba(187, 134, 252, 0.05) 100%);
+		border: 1px dashed var(--accent);
+		color: var(--accent);
+		padding: 6px 12px;
+		border-radius: 6px;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.85rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		box-shadow: 0 0 8px rgba(187, 134, 252, 0.1);
+	}
+
+	.install-btn:hover {
+		background: linear-gradient(135deg, rgba(187, 134, 252, 0.2) 0%, rgba(187, 134, 252, 0.1) 100%);
+		border-style: solid;
+		box-shadow: 0 0 12px rgba(187, 134, 252, 0.25);
+		transform: translateY(-1px);
+	}
+
+	.install-btn:active {
+		transform: translateY(0);
+	}
+
+	@media (max-width: 480px) {
+		.install-btn span {
+			display: none;
+		}
+		.install-btn {
+			padding: 6px 8px;
+		}
 	}
 
 	@media (max-width: 600px) {
