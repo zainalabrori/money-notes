@@ -25,44 +25,44 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 	{@html webManifestLink}
-	<meta name="theme-color" content="#121212" />
+	<meta name="theme-color" content="#09090b" />
 </svelte:head>
 
 {@render children()}
 
 <style>
 	:global(:root) {
-		--bg-primary: #0b0f19;
-		--bg-secondary: #121826;
-		--bg-tertiary: #1b2336;
-		--bg-card: rgba(18, 24, 38, 0.7);
-		--bg-glass: rgba(11, 15, 25, 0.75);
-		--text-primary: #f3f4f6;
-		--text-secondary: #9ca3af;
-		--text-tertiary: #6b7280;
-		--accent: #8b5cf6;
-		--accent-light: #a78bfa;
-		--accent-glow: rgba(139, 92, 246, 0.15);
-		--border: #242f47;
-		--border-glass: rgba(255, 255, 255, 0.06);
-		--income: #10b981;
-		--income-bg: rgba(16, 185, 129, 0.1);
-		--income-glow: rgba(16, 185, 129, 0.15);
-		--expense: #f43f5e;
-		--expense-bg: rgba(244, 63, 94, 0.1);
-		--expense-glow: rgba(244, 63, 94, 0.15);
-		--selection: #1e293b;
-		--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-		--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-		--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
-		--shadow-glow: 0 0 20px rgba(139, 92, 246, 0.1);
+		--bg-primary: #08080a;
+		--bg-secondary: #0f0f12;
+		--bg-tertiary: #17171c;
+		--bg-card: #0f0f12;
+		--bg-glass: rgba(8, 8, 10, 0.9);
+		--text-primary: #f0f0f5;
+		--text-secondary: #a0a0ab;
+		--text-tertiary: #52525b;
+		--accent: #00ff66; /* Terminal green */
+		--accent-light: #39ff14;
+		--accent-glow: rgba(0, 255, 102, 0.05);
+		--border: #222226;
+		--border-glass: rgba(255, 255, 255, 0.03);
+		--income: #00ff66;
+		--income-bg: rgba(0, 255, 102, 0.04);
+		--income-glow: rgba(0, 255, 102, 0);
+		--expense: #ff3366;
+		--expense-bg: rgba(255, 51, 102, 0.04);
+		--expense-glow: rgba(255, 51, 102, 0);
+		--selection: #1c1c24;
+		--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+		--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.7);
+		--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.8);
+		--shadow-glow: 0 0 0 transparent;
 	}
 
 	:global(body) {
 		margin: 0;
 		background-color: var(--bg-primary);
 		color: var(--text-primary);
-		font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+		font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', Monaco, monospace;
 		-webkit-tap-highlight-color: transparent;
 		overflow: hidden;
 		line-height: 1.5;

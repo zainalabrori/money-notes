@@ -1,13 +1,28 @@
 <script lang="ts">
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Editor from '$lib/components/Editor.svelte';
-	import Dashboard from '$lib/components/Dashboard.svelte';
 	import { notes } from '$lib/stores/notes';
 	import { fade } from 'svelte/transition';
 	import { pwa } from '$lib/stores/pwa.svelte';
+	import type { Note } from '$lib/db/dexie';
 
 	let selectedNoteId = $state<number | null>(null);
 	let isSidebarVisible = $state(true);
+
+	// Auto-select most recent note on mount or create one if empty
+	$effect(() => {
+		const unsubscribe = notes.subscribe((value) => {
+			if (selectedNoteId === null && value.length > 0) {
+				const sorted = [...value].sort((a, b) => b.updatedAt - a.updatedAt);
+				selectedNoteId = sorted[0].id ?? null;
+			} else if (value.length === 0) {
+				notes.add().then((id) => {
+					selectedNoteId = id;
+				});
+			}
+		});
+		return unsubscribe;
+	});
 
 	function toggleSidebar() {
 		isSidebarVisible = !isSidebarVisible;
@@ -44,6 +59,12 @@
 
 	<main class="main-content" class:full-width={!isSidebarVisible}>
 		<header class="top-bar">
+			<div class="terminal-dots">
+				<span class="dot red"></span>
+				<span class="dot yellow"></span>
+				<span class="dot green"></span>
+			</div>
+
 			{#if !isSidebarVisible}
 				<button
 					class="sidebar-toggle-btn"
@@ -53,12 +74,12 @@
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						width="20"
-						height="20"
+						width="14"
+						height="14"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
-						stroke-width="2"
+						stroke-width="2.5"
 						stroke-linecap="round"
 						stroke-linejoin="round"
 						class="lucide lucide-panel-left-open"
@@ -69,11 +90,11 @@
 				</button>
 			{/if}
 			
-			<div class="brand-logo" onclick={() => selectedNoteId = null} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (selectedNoteId = null)}>
-				<div class="logo-mark">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-				</div>
-				<span class="placeholder-text">Money Notes</span>
+			<div class="brand-logo">
+				<span class="prompt-user">guest@money-notes</span>
+				<span class="prompt-colon">:</span>
+				<span class="prompt-dir">~/ledgers</span>
+				<span class="prompt-char">$</span>
 			</div>
 
 			<div class="spacer"></div>
@@ -85,22 +106,7 @@
 					title="Install App"
 					transition:fade={{ duration: 150 }}
 				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						class="lucide lucide-download"
-						><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline
-							points="7 10 12 15 17 10"
-						/><line x1="12" x2="12" y1="15" y2="3" /></svg
-					>
-					<span>Install App</span>
+					<span>./install.sh</span>
 				</button>
 			{/if}
 		</header>
@@ -108,7 +114,9 @@
 		{#if selectedNoteId}
 			<Editor noteId={selectedNoteId} />
 		{:else}
-			<Dashboard bind:selectedNoteId />
+			<div class="empty-state">
+				<p>Memuat catatan...</p>
+			</div>
 		{/if}
 	</main>
 </div>
@@ -134,16 +142,35 @@
 		align-items: center;
 		padding: 0.5rem 1rem;
 		border-bottom: 1px solid var(--border);
-		gap: 1rem;
+		gap: 0.75rem;
 		height: 48px;
+		background: var(--bg-secondary);
 	}
 
+	.terminal-dots {
+		display: flex;
+		gap: 6px;
+		margin-right: 0.25rem;
+		user-select: none;
+	}
+
+	.terminal-dots .dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		display: inline-block;
+	}
+
+	.terminal-dots .dot.red { background: #ff5f56; }
+	.terminal-dots .dot.yellow { background: #ffbd2e; }
+	.terminal-dots .dot.green { background: #27c93f; }
+
 	.sidebar-toggle-btn {
-		background: var(--bg-secondary);
+		background: var(--bg-primary);
 		border: 1px solid var(--border);
 		color: var(--text-secondary);
-		padding: 6px 10px;
-		border-radius: 6px;
+		padding: 4px 8px;
+		border-radius: 4px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -154,36 +181,36 @@
 	.sidebar-toggle-btn:hover {
 		color: var(--text-primary);
 		background: var(--bg-tertiary);
-		border-color: var(--accent);
+		border-color: var(--text-secondary);
 	}
 
 	.brand-logo {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
-		cursor: pointer;
-		outline: none;
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 0.85rem;
 		user-select: none;
 	}
 
-	.logo-mark {
-		width: 28px;
-		height: 28px;
-		background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
-		color: white;
-		border-radius: 8px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
+	.prompt-user {
+		color: #5af78e;
+		font-weight: 700;
 	}
 
-	.placeholder-text {
+	.prompt-colon {
 		color: var(--text-primary);
-		font-weight: 700;
-		font-size: 0.95rem;
-		letter-spacing: -0.01em;
 	}
+
+	.prompt-dir {
+		color: #57c7ff;
+		font-weight: 700;
+	}
+
+	.prompt-char {
+		color: var(--text-primary);
+		margin-left: 4px;
+	}
+
 	.sidebar-backdrop {
 		display: none;
 	}
@@ -193,42 +220,33 @@
 	}
 
 	.install-btn {
-		background: linear-gradient(
-			135deg,
-			rgba(187, 134, 252, 0.1) 0%,
-			rgba(187, 134, 252, 0.05) 100%
-		);
-		border: 1px dashed var(--accent);
-		color: var(--accent);
-		padding: 6px 12px;
-		border-radius: 6px;
+		background: var(--bg-primary);
+		border: 1px solid var(--border);
+		color: var(--accent); /* green installer script link */
+		padding: 4px 10px;
+		border-radius: 4px;
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.85rem;
-		font-weight: 600;
+		font-size: 0.8rem;
+		font-weight: 700;
+		font-family: 'JetBrains Mono', monospace;
 		cursor: pointer;
 		transition: all 0.2s ease;
-		box-shadow: 0 0 8px rgba(187, 134, 252, 0.1);
 	}
 
 	.install-btn:hover {
-		background: linear-gradient(135deg, rgba(187, 134, 252, 0.2) 0%, rgba(187, 134, 252, 0.1) 100%);
-		border-style: solid;
-		box-shadow: 0 0 12px rgba(187, 134, 252, 0.25);
-		transform: translateY(-1px);
+		background: var(--bg-tertiary);
+		color: var(--accent-light);
+		border-color: var(--text-secondary);
 	}
 
 	.install-btn:active {
-		transform: translateY(0);
+		transform: scale(0.98);
 	}
 
 	@media (max-width: 480px) {
-		.install-btn span {
-			display: none;
-		}
 		.install-btn {
-			padding: 6px 8px;
+			padding: 4px 6px;
 		}
 	}
 
@@ -249,5 +267,14 @@
 			backdrop-filter: blur(2px);
 			z-index: 9;
 		}
+	}
+
+	.empty-state {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--text-secondary);
+		font-size: 0.9rem;
 	}
 </style>

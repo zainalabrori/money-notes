@@ -3,6 +3,7 @@
 	import { parseContent } from '../parser/note';
 	import type { Note } from '../db/dexie';
 	import Backup from './Backup.svelte';
+	import { formatCurrency } from '../utils/currency';
 
 	let {
 		selectedNoteId = $bindable(),
@@ -74,7 +75,7 @@
 	}
 
 	async function deleteNote(id: number) {
-		if (confirm('Hapus catatan keuangan ini?')) {
+		if (confirm('Hapus catatan keuangan ini? (git rm)')) {
 			await notes.delete(id);
 			if (selectedNoteId === id) {
 				selectedNoteId = null;
@@ -85,14 +86,20 @@
 	function getNoteFinancials(content: string) {
 		return parseContent(content);
 	}
+
+	function generateHash(id: number, updatedAt: number): string {
+		const val = (id * 9876543 + updatedAt).toString(16);
+		return val.substring(0, 7).padEnd(7, 'f');
+	}
 </script>
 
 <aside class="sidebar" class:collapsed={!isSidebarVisible}>
 	<div class="sidebar-header">
-		<button onclick={createNote} class="new-btn" title="Buat Catatan Baru (Ctrl+N)">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>
-			<span>Catatan Baru</span>
-		</button>
+		<div class="repo-info">
+			<span class="repo-label">repo:</span>
+			<span class="repo-name">money-notes</span>
+			<span class="branch-tag">[main]</span>
+		</div>
 		<button
 			onclick={() => (isSidebarVisible = false)}
 			class="toggle-btn"
@@ -100,8 +107,8 @@
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
-				width="20"
-				height="20"
+				width="14"
+				height="14"
 				viewBox="0 0 24 24"
 				fill="none"
 				stroke="currentColor"
@@ -111,50 +118,59 @@
 				class="lucide lucide-panel-left-close"
 				><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /><path
 					d="m16 15-3-3 3-3"
-				/></svg
-			>
+				/></svg>
+		</button>
+	</div>
+
+	<!-- CLI Actions -->
+	<div class="cli-actions">
+		<button onclick={createNote} class="cli-action-btn" title="Buat Catatan Baru (touch)">
+			<span>$ touch ledger.txt</span>
 		</button>
 	</div>
 
 	<!-- Searching & Date selection -->
 	<div class="filters">
 		<div class="search-wrapper">
-			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+			<span class="cli-prompt-char">$ grep</span>
 			<input type="text" bind:value={searchQuery} placeholder="Cari catatan..." class="search-input" />
 		</div>
 
-		<select bind:value={selectedMonth} class="month-select">
-			<option value="all">Semua Bulan</option>
-			{#each availableMonths as month}
-				<option value={month}>
-					{new Date(month + '-01').toLocaleDateString(undefined, {
-						month: 'long',
-						year: 'numeric'
-					})}
-				</option>
-			{/each}
-		</select>
+		<div class="filter-row">
+			<span class="cli-prompt-char">--month=</span>
+			<select bind:value={selectedMonth} class="month-select">
+				<option value="all">all</option>
+				{#each availableMonths as month}
+					<option value={month}>
+						{month}
+					</option>
+				{/each}
+			</select>
+		</div>
 	</div>
 
 	<!-- Horizontal scrollable Tag directory -->
 	{#if allTags.length > 0}
 		<div class="tag-directory">
-			<button 
-				class="tag-dir-btn" 
-				class:active={selectedTag === null}
-				onclick={() => selectedTag = null}
-			>
-				Semua
-			</button>
-			{#each allTags as tag}
+			<span class="branch-icon-label">git checkout [branch]:</span>
+			<div class="tag-scroll-row">
 				<button 
 					class="tag-dir-btn" 
-					class:active={selectedTag === tag}
-					onclick={() => selectedTag = tag}
+					class:active={selectedTag === null}
+					onclick={() => selectedTag = null}
 				>
-					#{tag}
+					main
 				</button>
-			{/each}
+				{#each allTags as tag}
+					<button 
+						class="tag-dir-btn" 
+						class:active={selectedTag === tag}
+						onclick={() => selectedTag = tag}
+					>
+						{tag}
+					</button>
+				{/each}
+			</div>
 		</div>
 	{/if}
 
@@ -162,7 +178,7 @@
 	<div class="note-list">
 		{#if filteredNotes.length === 0}
 			<div class="empty-list-state">
-				<p>Tidak ada catatan</p>
+				<p>No ledgers found</p>
 			</div>
 		{:else}
 			{#each filteredNotes as note}
@@ -177,36 +193,30 @@
 				>
 					<div class="note-info">
 						<div class="note-row-top">
-							<span class="note-title">
-								{note.title || 'Catatan Kosong'}
+							<span class="note-title" class:active-title={selectedNoteId === note.id}>
+								{#if selectedNoteId === note.id}
+									<span class="git-status-prefix-active">&gt;</span>
+								{:else}
+									<span class="git-status-prefix-inactive">&nbsp;</span>
+								{/if}
+								{note.title ? `${note.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.ledger` : 'untitled.ledger'}
 							</span>
 							
-							<!-- Small visual balance dot -->
-							<span 
-								class="balance-dot" 
-								class:dot-income={fin.total > 0} 
-								class:dot-expense={fin.total < 0}
-								title={fin.total > 0 ? 'Surplus' : fin.total < 0 ? 'Defisit' : 'Seimbang / Kosong'}
-							></span>
+							<span class="note-balance-delta" class:pos={fin.total > 0} class:neg={fin.total < 0}>
+								{fin.total > 0 ? '+' : ''}{formatCurrency(fin.total)}
+							</span>
 						</div>
 
 						<div class="note-row-bottom">
 							<span class="note-date">
-								{new Date(note.updatedAt).toLocaleDateString(undefined, {
-									month: 'short',
-									day: 'numeric'
-								})}
+								commit: {generateHash(note.id!, note.updatedAt)}
 							</span>
 
-							<!-- Tag tags display -->
 							{#if note.tags && note.tags.length > 0}
 								<div class="note-item-tags">
 									{#each note.tags.slice(0, 2) as tag}
-										<span class="note-item-tag">#{tag}</span>
+										<span class="note-item-tag">{tag}</span>
 									{/each}
-									{#if note.tags.length > 2}
-										<span class="note-item-tag">+{note.tags.length - 2}</span>
-									{/if}
 								</div>
 							{/if}
 						</div>
@@ -218,9 +228,9 @@
 							deleteNote(note.id!);
 						}}
 						class="delete-btn"
-						title="Hapus Catatan"
+						title="git rm"
 					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg>
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg>
 					</button>
 				</div>
 			{/each}
@@ -236,14 +246,14 @@
 		border-right: 1px solid var(--border);
 		display: flex;
 		flex-direction: column;
-		background: var(--bg-glass);
-		backdrop-filter: blur(10px);
+		background: var(--bg-secondary);
 		flex-shrink: 0;
 		transition:
 			width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
 			margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
 			border-right-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		z-index: 5;
+		font-family: 'JetBrains Mono', monospace;
 	}
 
 	.sidebar.collapsed {
@@ -254,40 +264,68 @@
 	}
 
 	.sidebar-header {
-		padding: 1.25rem 1rem;
+		padding: 1rem;
 		display: flex;
-		gap: 0.5rem;
+		justify-content: space-between;
 		align-items: center;
+		border-bottom: 1px solid var(--border);
 	}
 
-	.new-btn {
-		flex: 1;
-		padding: 0.6rem 1rem;
-		background: var(--bg-tertiary);
-		border: 1px solid var(--border);
+	.repo-info {
+		font-size: 0.8rem;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.repo-label {
+		color: var(--text-tertiary);
+	}
+
+	.repo-name {
 		color: var(--text-primary);
-		border-radius: 8px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		font-weight: 600;
-		font-size: 0.85rem;
+		font-weight: 700;
 	}
 
-	.new-btn:hover {
-		background: var(--selection);
-		border-color: var(--accent);
+	.branch-tag {
+		color: #ff9f43; /* orange branch style */
+		font-weight: 700;
+	}
+
+	.cli-actions {
+		padding: 0.75rem 1rem 0.5rem;
+	}
+
+	.cli-action-btn {
+		width: 100%;
+		background: var(--bg-primary);
+		border: 1px solid var(--border);
+		color: var(--accent); /* Terminal Green */
+		padding: 8px 12px;
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 0.8rem;
+		border-radius: 4px;
+		text-align: left;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		font-weight: 700;
+		transition: all 0.2s ease;
+	}
+
+	.cli-action-btn:hover {
+		background: var(--bg-tertiary);
 		color: var(--accent-light);
-		box-shadow: 0 0 10px var(--accent-glow);
+		border-color: var(--text-secondary);
 	}
 
 	.toggle-btn {
 		background: none;
 		border: 1px solid var(--border);
 		color: var(--text-secondary);
-		padding: 0.5rem;
-		border-radius: 8px;
+		padding: 0.35rem;
+		border-radius: 4px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -297,8 +335,8 @@
 
 	.toggle-btn:hover {
 		color: var(--text-primary);
-		background: var(--bg-secondary);
-		border-color: var(--accent);
+		background: var(--bg-tertiary);
+		border-color: var(--text-secondary);
 	}
 
 	@media (max-width: 600px) {
@@ -320,82 +358,108 @@
 	}
 
 	.filters {
-		padding: 0 1rem 1rem;
+		padding: 0.5rem 1rem 0.75rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.6rem;
-		border-bottom: 1px solid var(--border-glass);
+		gap: 0.5rem;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.search-wrapper {
-		position: relative;
 		display: flex;
 		align-items: center;
+		background: var(--bg-primary);
+		border: 1px solid var(--border);
+		border-radius: 4px;
+		padding: 0 8px;
+		gap: 6px;
+		height: 32px;
 	}
 
-	.search-icon {
-		position: absolute;
-		left: 10px;
-		color: var(--text-tertiary);
-		pointer-events: none;
+	.cli-prompt-char {
+		color: #ff5c57; /* red/pink option */
+		font-size: 0.8rem;
+		font-weight: 700;
+		white-space: nowrap;
 	}
 
 	.search-input {
+		background: transparent !important;
+		border: none !important;
+		padding: 0 !important;
+		box-shadow: none !important;
+		font-size: 0.8rem !important;
 		width: 100%;
-		padding: 0.5rem 0.5rem 0.5rem 2rem;
-		background: var(--bg-secondary);
-		border: 1px solid var(--border);
-		border-radius: 6px;
-		color: var(--text-primary);
-		font-size: 0.85rem;
+		font-family: 'JetBrains Mono', monospace;
+	}
+
+	.filter-row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		height: 32px;
 	}
 
 	.month-select {
-		padding: 0.5rem;
-		background: var(--bg-secondary);
+		flex: 1;
+		height: 100%;
+		font-size: 0.8rem;
+		padding: 0 6px;
+		background: var(--bg-primary);
 		border: 1px solid var(--border);
-		border-radius: 6px;
-		color: var(--text-primary);
-		font-size: 0.85rem;
+		border-radius: 4px;
 		cursor: pointer;
+		font-family: 'JetBrains Mono', monospace;
 	}
 
 	/* Tag Directory scrollbar */
 	.tag-directory {
-		padding: 0.75rem 1rem;
+		padding: 0.75rem 1rem 0.5rem;
+		border-bottom: 1px solid var(--border);
 		display: flex;
-		gap: 0.4rem;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.branch-icon-label {
+		font-size: 0.7rem;
+		color: var(--text-tertiary);
+	}
+
+	.tag-scroll-row {
+		display: flex;
+		gap: 4px;
 		overflow-x: auto;
-		border-bottom: 1px solid var(--border-glass);
 		scrollbar-width: none; /* Firefox */
 	}
 
-	.tag-directory::-webkit-scrollbar {
+	.tag-scroll-row::-webkit-scrollbar {
 		display: none; /* Safari / Chrome */
 	}
 
 	.tag-dir-btn {
-		background: var(--bg-secondary);
+		background: var(--bg-primary);
 		border: 1px solid var(--border);
 		color: var(--text-secondary);
-		padding: 3px 10px;
-		border-radius: 20px;
+		padding: 2px 8px;
+		border-radius: 4px;
 		font-size: 0.75rem;
 		white-space: nowrap;
 		cursor: pointer;
+		font-family: 'JetBrains Mono', monospace;
 		transition: all 0.2s ease;
-		font-weight: 500;
 	}
 
 	.tag-dir-btn:hover {
 		color: var(--text-primary);
-		border-color: var(--accent);
+		border-color: var(--text-secondary);
 	}
 
 	.tag-dir-btn.active {
-		background: var(--accent-glow);
-		color: var(--accent-light);
+		background: var(--accent);
+		color: var(--bg-primary);
 		border-color: var(--accent);
+		font-weight: 700;
 	}
 
 	/* Note List */
@@ -408,38 +472,26 @@
 		padding: 2.5rem 1rem;
 		text-align: center;
 		color: var(--text-tertiary);
-		font-size: 0.85rem;
+		font-size: 0.8rem;
 	}
 
 	.note-item {
 		cursor: pointer;
-		padding: 0.9rem 1rem;
-		border-bottom: 1px solid var(--border-glass);
+		padding: 0.6rem 1rem;
+		border-bottom: 1px solid var(--border);
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		outline: none;
-		transition: all 0.2s ease;
-		position: relative;
+		transition: all 0.15s ease;
 	}
 
 	.note-item:hover {
-		background-color: rgba(255, 255, 255, 0.02);
+		background-color: var(--bg-tertiary);
 	}
 
-	.active {
-		background-color: var(--selection) !important;
-	}
-
-	.active::before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		width: 3px;
-		background: var(--accent);
-		box-shadow: 0 0 8px var(--accent-glow);
+	.note-item.active {
+		background-color: var(--selection);
 	}
 
 	.note-info {
@@ -447,7 +499,7 @@
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.3rem;
+		gap: 2px;
 	}
 
 	.note-row-top {
@@ -457,33 +509,43 @@
 		gap: 0.5rem;
 	}
 
+	.git-status-prefix-active {
+		color: var(--accent);
+		font-weight: 700;
+		margin-right: 2px;
+	}
+
+	.git-status-prefix-inactive {
+		margin-right: 2px;
+		color: transparent;
+	}
+
 	.note-title {
-		font-weight: 600;
-		color: var(--text-primary);
+		font-weight: 500;
+		color: var(--text-secondary);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		font-size: 0.9rem;
+		font-size: 0.8rem;
 		flex: 1;
 	}
 
-	/* Indicator dots */
-	.balance-dot {
-		width: 6px;
-		height: 6px;
-		border-radius: 50%;
-		flex-shrink: 0;
-		background: var(--text-tertiary);
+	.note-title.active-title {
+		color: var(--text-primary);
+		font-weight: 700;
 	}
 
-	.dot-income {
-		background: var(--income);
-		box-shadow: 0 0 6px var(--income);
+	.note-balance-delta {
+		font-size: 0.75rem;
+		font-weight: 700;
 	}
 
-	.dot-expense {
-		background: var(--expense);
-		box-shadow: 0 0 6px var(--expense);
+	.note-balance-delta.pos {
+		color: var(--income);
+	}
+
+	.note-balance-delta.neg {
+		color: var(--expense);
 	}
 
 	.note-row-bottom {
@@ -491,10 +553,11 @@
 		justify-content: space-between;
 		align-items: center;
 		gap: 0.5rem;
+		padding-left: 12px;
 	}
 
 	.note-date {
-		font-size: 0.75rem;
+		font-size: 0.65rem;
 		color: var(--text-tertiary);
 	}
 
@@ -505,11 +568,12 @@
 	}
 
 	.note-item-tag {
-		font-size: 0.65rem;
-		color: var(--accent-light);
-		background: rgba(139, 92, 246, 0.1);
-		padding: 1px 5px;
-		border-radius: 4px;
+		font-size: 0.6rem;
+		color: #ff9f43;
+		background: rgba(255, 159, 67, 0.1);
+		border: 1px solid rgba(255, 159, 67, 0.2);
+		padding: 0px 4px;
+		border-radius: 2px;
 		font-weight: 500;
 	}
 
@@ -534,6 +598,7 @@
 
 	.delete-btn:hover {
 		color: var(--expense);
-		background: var(--expense-bg);
+		background: rgba(255, 51, 102, 0.1);
+		border-color: var(--expense);
 	}
 </style>
