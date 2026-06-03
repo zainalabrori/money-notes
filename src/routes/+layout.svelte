@@ -25,7 +25,7 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 	{@html webManifestLink}
-	<meta name="theme-color" content="#09090b" />
+	<meta name="theme-color" content="#08080a" />
 </svelte:head>
 
 {@render children()}

@@ -11,9 +11,11 @@ export default defineConfig({
 				name: 'Money Notes',
 				short_name: 'MoneyNotes',
 				description: 'Offline-first financial notes with inline calculator',
-				theme_color: '#121212',
-				background_color: '#121212',
+				theme_color: '#08080a',
+				background_color: '#08080a',
 				display: 'standalone',
+				start_url: '/',
+				scope: '/',
 				icons: [
 					{
 						src: 'pwa-192x192.png',
