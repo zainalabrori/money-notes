@@ -9,6 +9,12 @@
 	let webManifestLink = $derived(pwaInfo ? pwaInfo.webManifest.linkTag : '');
 
 	onMount(() => {
+		if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+			import('virtual:pwa-register').then(({ registerSW }) => {
+				registerSW({ immediate: true });
+			});
+		}
+
 		const handleBeforeInstallPrompt = (e: Event) => {
 			e.preventDefault();
 			pwa.setPrompt(e);
