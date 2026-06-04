@@ -225,6 +225,13 @@
 				>
 					<span>./test-push.sh</span>
 				</button>
+			{:else if typeof window !== 'undefined' && !window.isSecureContext}
+				<span
+					style="font-size: 0.75rem; color: var(--text-tertiary); font-family: 'JetBrains Mono', monospace; margin-left: 8px; border: 1px dashed var(--border); padding: 4px 8px; border-radius: 4px;"
+					title="Notification API requires HTTPS or localhost"
+				>
+					[http:// insecure context - notify.sh disabled]
+				</span>
 			{/if}
 		</header>
 
