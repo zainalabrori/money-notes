@@ -5,9 +5,104 @@
 	import { fade } from 'svelte/transition';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import type { Note } from '$lib/db/dexie';
+	import { onMount } from 'svelte';
 
 	let selectedNoteId = $state<number | null>(null);
 	let isSidebarVisible = $state(true);
+
+	const VAPID_PUBLIC_KEY = 'BATdT0XptowqM-WId6iTVFR9Iyn6XmBJrrTO6CIjLZBGG5JQduihLUZYk40eXLlTHXgsRwPZq7l_u79dabmARF4';
+
+	let isNotificationSupported = $state(false);
+	let isSubscribed = $state(false);
+
+	onMount(async () => {
+		isNotificationSupported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+		if (isNotificationSupported) {
+			try {
+				const registration = await navigator.serviceWorker.ready;
+				const existingSubscription = await registration.pushManager.getSubscription();
+				isSubscribed = existingSubscription !== null;
+			} catch (err) {
+				console.error('Error checking push subscription:', err);
+			}
+		}
+	});
+
+	async function urlBase64ToUint8Array(base64String: string) {
+		const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+		const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+
+		const rawData = window.atob(base64);
+		const outputArray = new Uint8Array(rawData.length);
+
+		for (let i = 0; i < rawData.length; ++i) {
+			outputArray[i] = rawData.charCodeAt(i);
+		}
+		return outputArray;
+	}
+
+	async function enableNotifications() {
+		if (!isNotificationSupported) return;
+
+		try {
+			const permission = await Notification.requestPermission();
+			if (permission !== 'granted') {
+				alert('Izin notifikasi ditolak. Harap izinkan notifikasi di pengaturan browser Anda.');
+				return;
+			}
+
+			const registration = await navigator.serviceWorker.ready;
+			const subscribeOptions = {
+				userVisibleOnly: true,
+				applicationServerKey: await urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+			};
+
+			const subscription = await registration.pushManager.subscribe(subscribeOptions);
+
+			const res = await fetch('/api/push/subscribe', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(subscription)
+			});
+
+			if (res.ok) {
+				isSubscribed = true;
+				alert('Notifikasi berhasil diaktifkan! Tekan "./test-push.sh" untuk menguji.');
+			} else {
+				throw new Error('Gagal mengirim langganan ke server');
+			}
+		} catch (err: any) {
+			console.error('Error enabling notifications:', err);
+			alert('Terjadi kesalahan saat mengaktifkan notifikasi: ' + err.message);
+		}
+	}
+
+	async function sendTestNotification() {
+		try {
+			const res = await fetch('/api/push/send-reminder', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					title: 'Money Notes',
+					body: 'Uji coba push notification berhasil! Aplikasi Anda kini bisa mengirim pengingat. 🚀'
+				})
+			});
+
+			if (res.ok) {
+				const result = await res.json();
+				console.log('Test notification triggered:', result);
+			} else {
+				throw new Error('Gagal mengirim permintaan uji coba');
+			}
+		} catch (err: any) {
+			console.error('Error sending test notification:', err);
+			alert('Gagal mengirim notifikasi uji coba: ' + err.message);
+		}
+	}
 
 	// Auto-select most recent note on mount or create one if empty
 	$effect(() => {
@@ -107,6 +202,28 @@
 					transition:fade={{ duration: 150 }}
 				>
 					<span>./install.sh</span>
+				</button>
+			{/if}
+
+			{#if isNotificationSupported && !isSubscribed}
+				<button
+					class="install-btn notify-btn"
+					onclick={enableNotifications}
+					title="Aktifkan Pengingat Harian"
+					transition:fade={{ duration: 150 }}
+					style="margin-left: 8px;"
+				>
+					<span>./notify.sh</span>
+				</button>
+			{:else if isNotificationSupported && isSubscribed}
+				<button
+					class="install-btn notify-btn active"
+					onclick={sendTestNotification}
+					title="Kirim Notifikasi Uji Coba"
+					transition:fade={{ duration: 150 }}
+					style="margin-left: 8px;"
+				>
+					<span>./test-push.sh</span>
 				</button>
 			{/if}
 		</header>
@@ -217,6 +334,14 @@
 
 	.spacer {
 		flex: 1;
+	}
+
+	.install-btn.notify-btn.active {
+		color: #ff9900; /* amber/orange for testing */
+	}
+
+	.install-btn.notify-btn.active:hover {
+		color: #ffb83d;
 	}
 
 	.install-btn {

@@ -6,6 +6,7 @@ export default defineConfig({
 	plugins: [
 		sveltekit(),
 		SvelteKitPWA({
+			strategies: 'injectManifest',
 			registerType: 'autoUpdate',
 			manifest: {
 				name: 'Money Notes',
@@ -35,7 +36,7 @@ export default defineConfig({
 					}
 				]
 			},
-			workbox: {
+			injectManifest: {
 				globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}']
 			}
 		})
