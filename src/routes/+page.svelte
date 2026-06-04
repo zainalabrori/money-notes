@@ -15,16 +15,22 @@
 	let isNotificationSupported = $state(false);
 	let isSubscribed = $state(false);
 
-	onMount(async () => {
+	onMount(() => {
+		// Check API availability immediately (synchronous)
 		isNotificationSupported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
-		if (isNotificationSupported) {
-			try {
-				const registration = await navigator.serviceWorker.ready;
-				const existingSubscription = await registration.pushManager.getSubscription();
-				isSubscribed = existingSubscription !== null;
-			} catch (err) {
-				console.error('Error checking push subscription:', err);
-			}
+
+		// Check existing subscription status asynchronously (with timeout to avoid hanging)
+		if (isNotificationSupported && navigator.serviceWorker.controller) {
+			const checkSubscription = async () => {
+				try {
+					const registration = await navigator.serviceWorker.ready;
+					const existingSubscription = await registration.pushManager.getSubscription();
+					isSubscribed = existingSubscription !== null;
+				} catch (err) {
+					console.error('Error checking push subscription:', err);
+				}
+			};
+			checkSubscription();
 		}
 	});
 
