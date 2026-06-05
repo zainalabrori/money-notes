@@ -87,3 +87,13 @@ export const POST: RequestHandler = async ({ request, platform, url }) => {
 		return json({ error: err.message || 'Internal Server Error' }, { status: 500 });
 	}
 };
+
+export const GET: RequestHandler = async () => {
+	return json(
+		{
+			error: 'Method GET Not Allowed',
+			message: 'Untuk memicu push notification, Anda harus mengirimkan request POST (bukan membuka langsung di browser yang menggunakan GET). Pastikan metode di cron-job.org diatur ke POST.'
+		},
+		{ status: 405 }
+	);
+};
