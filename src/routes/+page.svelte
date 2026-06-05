@@ -19,13 +19,27 @@
 		// Check API availability immediately (synchronous)
 		isNotificationSupported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
 
-		// Check existing subscription status asynchronously (with timeout to avoid hanging)
-		if (isNotificationSupported && navigator.serviceWorker.controller) {
+		// Check existing subscription status asynchronously
+		if (isNotificationSupported) {
 			const checkSubscription = async () => {
 				try {
 					const registration = await navigator.serviceWorker.ready;
 					const existingSubscription = await registration.pushManager.getSubscription();
-					isSubscribed = existingSubscription !== null;
+					if (existingSubscription !== null) {
+						isSubscribed = true;
+						// Auto-sync subscription with the server to ensure it is registered in KV
+						fetch('/api/push/subscribe', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify(existingSubscription)
+						}).catch((err) => {
+							console.error('Error syncing push subscription with server:', err);
+						});
+					} else {
+						isSubscribed = false;
+					}
 				} catch (err) {
 					console.error('Error checking push subscription:', err);
 				}

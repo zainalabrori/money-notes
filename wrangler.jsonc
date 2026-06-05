@@ -10,5 +10,11 @@
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"
 	},
-	"compatibility_flags": ["nodejs_compat"]
+	"compatibility_flags": ["nodejs_compat"],
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "fd9d57af683a4e7481c1cef871358473"
+		}
+	]
 }
