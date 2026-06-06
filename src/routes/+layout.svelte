@@ -39,25 +39,25 @@
 <style>
 	/* ─── Design Tokens ─────────────────────────────────────── */
 	:global(:root) {
-		--bg-primary:    #08080a;
-		--bg-secondary:  #0f0f12;
-		--bg-tertiary:   #17171c;
-		--text-primary:  #f0f0f5;
-		--text-secondary:#a0a0ab;
+		--bg-primary: #08080a;
+		--bg-secondary: #0f0f12;
+		--bg-tertiary: #17171c;
+		--text-primary: #f0f0f5;
+		--text-secondary: #a0a0ab;
 		--text-tertiary: #52525b;
 
 		/* Accent: a calm teal instead of harsh terminal-green */
-		--accent:        #34d399;
-		--accent-glow:   rgba(52, 211, 153, 0.08);
+		--accent: #34d399;
+		--accent-glow: rgba(52, 211, 153, 0.08);
 
-		--border:        #222226;
-		--selection:     #1c1c24;
+		--border: #222226;
+		--selection: #1c1c24;
 
-		--income:        #34d399;  /* soft green  */
-		--expense:       #f87171;  /* soft red    */
+		--income: #34d399; /* soft green  */
+		--expense: #f87171; /* soft red    */
 
-		--radius-sm:     6px;
-		--radius-md:     10px;
+		--radius-sm: 6px;
+		--radius-md: 10px;
 	}
 
 	/* ─── Reset & Base ──────────────────────────────────────── */
@@ -66,13 +66,20 @@
 		background-color: var(--bg-primary);
 		color: var(--text-primary);
 		/* Use a readable sans-serif for general audience */
-		font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+		font-family:
+			'Inter',
+			'Segoe UI',
+			system-ui,
+			-apple-system,
+			sans-serif;
 		-webkit-tap-highlight-color: transparent;
 		overflow: hidden;
 		line-height: 1.6;
 	}
 
-	:global(*) { box-sizing: border-box; }
+	:global(*) {
+		box-sizing: border-box;
+	}
 
 	/* ─── Form Elements ─────────────────────────────────────── */
 	:global(input, textarea, select, button) {
@@ -82,7 +89,9 @@
 		font-family: inherit;
 		font-size: 1rem;
 		border-radius: var(--radius-sm);
-		transition: border-color 0.2s, box-shadow 0.2s;
+		transition:
+			border-color 0.2s,
+			box-shadow 0.2s;
 	}
 
 	:global(input:focus, textarea:focus, select:focus) {
@@ -96,11 +105,23 @@
 		font-weight: 600;
 	}
 
-	:global(button:active) { transform: scale(0.98); }
+	:global(button:active) {
+		transform: scale(0.98);
+	}
 
 	/* ─── Scrollbar ─────────────────────────────────────────── */
-	:global(::-webkit-scrollbar)       { width: 5px; height: 5px; }
-	:global(::-webkit-scrollbar-track) { background: var(--bg-primary); }
-	:global(::-webkit-scrollbar-thumb) { background: var(--border); border-radius: 10px; }
-	:global(::-webkit-scrollbar-thumb:hover) { background: var(--text-tertiary); }
+	:global(::-webkit-scrollbar) {
+		width: 5px;
+		height: 5px;
+	}
+	:global(::-webkit-scrollbar-track) {
+		background: var(--bg-primary);
+	}
+	:global(::-webkit-scrollbar-thumb) {
+		background: var(--border);
+		border-radius: 10px;
+	}
+	:global(::-webkit-scrollbar-thumb:hover) {
+		background: var(--text-tertiary);
+	}
 </style>

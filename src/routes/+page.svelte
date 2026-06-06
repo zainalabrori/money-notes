@@ -10,7 +10,8 @@
 	let isSidebarVisible = $state(true);
 
 	// VAPID public key for push notifications
-	const VAPID_PUBLIC_KEY = 'BATdT0XptowqM-WId6iTVFR9Iyn6XmBJrrTO6CIjLZBGG5JQduihLUZYk40eXLlTHXgsRwPZq7l_u79dabmARF4';
+	const VAPID_PUBLIC_KEY =
+		'BATdT0XptowqM-WId6iTVFR9Iyn6XmBJrrTO6CIjLZBGG5JQduihLUZYk40eXLlTHXgsRwPZq7l_u79dabmARF4';
 
 	let isNotificationSupported = $state(false);
 	let isSubscribed = $state(false);
@@ -18,9 +19,7 @@
 	onMount(() => {
 		// Check if the browser supports push notifications
 		isNotificationSupported =
-			'Notification' in window &&
-			'serviceWorker' in navigator &&
-			'PushManager' in window;
+			'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
 
 		if (isNotificationSupported) {
 			(async () => {
@@ -109,7 +108,9 @@
 				const sorted = [...value].sort((a, b) => b.updatedAt - a.updatedAt);
 				selectedNoteId = sorted[0].id ?? null;
 			} else if (value.length === 0) {
-				notes.add().then((id) => { selectedNoteId = id; });
+				notes.add().then((id) => {
+					selectedNoteId = id;
+				});
 			}
 		});
 		return unsub;
@@ -161,22 +162,38 @@
 					transition:fade={{ duration: 150 }}
 				>
 					<!-- Hamburger / panel-open icon -->
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-						fill="none" stroke="currentColor" stroke-width="2.5"
-						stroke-linecap="round" stroke-linejoin="round">
-						<rect width="18" height="18" x="3" y="3" rx="2"/>
-						<path d="M9 3v18"/><path d="m14 9 3 3-3 3"/>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<rect width="18" height="18" x="3" y="3" rx="2" />
+						<path d="M9 3v18" /><path d="m14 9 3 3-3 3" />
 					</svg>
 				</button>
 			{/if}
 
 			<!-- App branding -->
 			<div class="brand">
-				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-					fill="none" stroke="var(--accent)" stroke-width="2"
-					stroke-linecap="round" stroke-linejoin="round">
-					<path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2"/>
-					<path d="M12 6v6l4 2"/>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="18"
+					height="18"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="var(--accent)"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2" />
+					<path d="M12 6v6l4 2" />
 				</svg>
 				<span class="brand-name">Money Notes</span>
 			</div>
@@ -268,7 +285,9 @@
 		letter-spacing: -0.02em;
 	}
 
-	.spacer { flex: 1; }
+	.spacer {
+		flex: 1;
+	}
 
 	/* Generic icon-only button */
 	.icon-btn {
@@ -326,7 +345,9 @@
 			backdrop-filter: blur(0px);
 			z-index: 9;
 			pointer-events: none;
-			transition: background 0.2s, backdrop-filter 0.2s;
+			transition:
+				background 0.2s,
+				backdrop-filter 0.2s;
 		}
 
 		.sidebar-backdrop.visible {

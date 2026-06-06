@@ -13,10 +13,10 @@
 		isSidebarVisible: boolean;
 	} = $props();
 
-	let allNotes    = $state<Note[]>([]);
+	let allNotes = $state<Note[]>([]);
 	let searchQuery = $state('');
 	let selectedMonth = $state<string>('all');
-	let selectedTag   = $state<string | null>(null);
+	let selectedTag = $state<string | null>(null);
 
 	// Collect unique tags from all notes
 	let allTags = $derived.by(() => {
@@ -31,8 +31,7 @@
 			.filter((note) => {
 				const q = searchQuery.toLowerCase();
 				const matchSearch =
-					note.title.toLowerCase().includes(q) ||
-					note.content.toLowerCase().includes(q);
+					note.title.toLowerCase().includes(q) || note.content.toLowerCase().includes(q);
 
 				const matchMonth =
 					selectedMonth === 'all' ||
@@ -42,9 +41,7 @@
 						return key === selectedMonth;
 					})();
 
-				const matchTag =
-					selectedTag === null ||
-					(note.tags && note.tags.includes(selectedTag));
+				const matchTag = selectedTag === null || (note.tags && note.tags.includes(selectedTag));
 
 				return matchSearch && matchMonth && matchTag;
 			})
@@ -62,7 +59,9 @@
 	});
 
 	$effect(() => {
-		const unsub = notes.subscribe((v) => { allNotes = v; });
+		const unsub = notes.subscribe((v) => {
+			allNotes = v;
+		});
 		return unsub;
 	});
 
@@ -103,11 +102,19 @@
 			title="Tutup daftar (Ctrl+B)"
 		>
 			<!-- Panel-left-close icon -->
-			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-				fill="none" stroke="currentColor" stroke-width="2.5"
-				stroke-linecap="round" stroke-linejoin="round">
-				<rect width="18" height="18" x="3" y="3" rx="2"/>
-				<path d="M9 3v18"/><path d="m16 15-3-3 3-3"/>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="14"
+				height="14"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2.5"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<rect width="18" height="18" x="3" y="3" rx="2" />
+				<path d="M9 3v18" /><path d="m16 15-3-3 3-3" />
 			</svg>
 		</button>
 	</div>
@@ -115,10 +122,18 @@
 	<!-- ── New Note button ──────────────────────────── -->
 	<div class="actions-area">
 		<button class="new-note-btn" onclick={createNote} title="Buat catatan baru (Ctrl+N)">
-			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-				fill="none" stroke="currentColor" stroke-width="2.5"
-				stroke-linecap="round" stroke-linejoin="round">
-				<path d="M12 5v14M5 12h14"/>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="14"
+				height="14"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2.5"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d="M12 5v14M5 12h14" />
 			</svg>
 			Catatan Baru
 		</button>
@@ -127,10 +142,19 @@
 	<!-- ── Search & month filter ────────────────────── -->
 	<div class="filters">
 		<div class="search-box">
-			<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-				fill="none" stroke="currentColor" stroke-width="2.5"
-				stroke-linecap="round" stroke-linejoin="round" class="search-icon">
-				<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="13"
+				height="13"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2.5"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				class="search-icon"
+			>
+				<circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
 			</svg>
 			<input
 				type="text"
@@ -155,7 +179,7 @@
 				<button
 					class="tag-pill"
 					class:active={selectedTag === null}
-					onclick={() => selectedTag = null}
+					onclick={() => (selectedTag = null)}
 				>
 					Semua
 				</button>
@@ -163,7 +187,7 @@
 					<button
 						class="tag-pill"
 						class:active={selectedTag === tag}
-						onclick={() => selectedTag = tag}
+						onclick={() => (selectedTag = tag)}
 					>
 						{tag}
 					</button>
@@ -217,14 +241,25 @@
 					<!-- Delete button (visible on hover) -->
 					<button
 						class="delete-btn"
-						onclick={(e) => { e.stopPropagation(); deleteNote(note.id!); }}
+						onclick={(e) => {
+							e.stopPropagation();
+							deleteNote(note.id!);
+						}}
 						title="Hapus catatan"
 					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-							fill="none" stroke="currentColor" stroke-width="2.5"
-							stroke-linecap="round" stroke-linejoin="round">
-							<path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-							<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="13"
+							height="13"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+							<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
 						</svg>
 					</button>
 				</div>
@@ -252,7 +287,7 @@
 		background: var(--bg-secondary);
 		border-right: 1px solid var(--border);
 		overflow: hidden;
-		transition: width 0.3s cubic-bezier(.4,0,.2,1);
+		transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		z-index: 5;
 	}
 
@@ -268,14 +303,14 @@
 			width: 280px; /* selalu 280px di mobile, pakai transform untuk hide/show */
 			height: 100%;
 			left: 0;
-			box-shadow: 4px 0 24px rgba(0,0,0,.6);
-			transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+			box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+			transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 			overflow: hidden; /* jangan auto — cegah scroll body merembes */
 			z-index: 10; /* harus di atas backdrop (z-index: 9) */
 		}
 
 		.sidebar.collapsed {
-			width: 280px;       /* reset override dari desktop */
+			width: 280px; /* reset override dari desktop */
 			border-right-width: 1px;
 			transform: translateX(-100%);
 		}
@@ -363,7 +398,10 @@
 		box-shadow: 0 0 0 3px var(--accent-glow);
 	}
 
-	.search-icon { color: var(--text-tertiary); flex-shrink: 0; }
+	.search-icon {
+		color: var(--text-tertiary);
+		flex-shrink: 0;
+	}
 
 	.search-input {
 		background: transparent !important;
@@ -400,7 +438,9 @@
 		scrollbar-width: none;
 	}
 
-	.tag-scroll::-webkit-scrollbar { display: none; }
+	.tag-scroll::-webkit-scrollbar {
+		display: none;
+	}
 
 	.tag-pill {
 		background: var(--bg-primary);
@@ -427,7 +467,10 @@
 	}
 
 	/* ── Note list ───────────────────────────────────── */
-	.note-list { flex: 1; overflow-y: auto; }
+	.note-list {
+		flex: 1;
+		overflow-y: auto;
+	}
 
 	.empty-list {
 		padding: 2.5rem 1rem;
@@ -447,8 +490,12 @@
 		transition: background 0.15s;
 	}
 
-	.note-item:hover  { background: var(--bg-tertiary); }
-	.note-item.active { background: var(--selection); }
+	.note-item:hover {
+		background: var(--bg-tertiary);
+	}
+	.note-item.active {
+		background: var(--selection);
+	}
 
 	.note-meta {
 		flex: 1;
@@ -475,7 +522,10 @@
 		flex: 1;
 	}
 
-	.note-item.active .note-title { color: var(--text-primary); font-weight: 700; }
+	.note-item.active .note-title {
+		color: var(--text-primary);
+		font-weight: 700;
+	}
 
 	.note-balance {
 		font-size: 0.75rem;
@@ -483,8 +533,12 @@
 		white-space: nowrap;
 	}
 
-	.note-balance.pos { color: var(--income); }
-	.note-balance.neg { color: var(--expense); }
+	.note-balance.pos {
+		color: var(--income);
+	}
+	.note-balance.neg {
+		color: var(--expense);
+	}
 
 	.note-bottom-row {
 		display: flex;
@@ -506,8 +560,8 @@
 	.note-tag {
 		font-size: 0.62rem;
 		color: #fb923c;
-		background: rgba(251,146,60,.1);
-		border: 1px solid rgba(251,146,60,.2);
+		background: rgba(251, 146, 60, 0.1);
+		border: 1px solid rgba(251, 146, 60, 0.2);
 		padding: 1px 5px;
 		border-radius: 4px;
 	}
@@ -522,13 +576,18 @@
 		display: flex;
 		align-items: center;
 		opacity: 0;
-		transition: opacity 0.2s, color 0.2s, background 0.2s;
+		transition:
+			opacity 0.2s,
+			color 0.2s,
+			background 0.2s;
 	}
 
-	.note-item:hover .delete-btn { opacity: 1; }
+	.note-item:hover .delete-btn {
+		opacity: 1;
+	}
 
 	.delete-btn:hover {
 		color: var(--expense);
-		background: rgba(248,113,113,.1);
+		background: rgba(248, 113, 113, 0.1);
 	}
 </style>

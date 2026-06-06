@@ -8,17 +8,17 @@
 
 	let { noteId }: { noteId: number } = $props();
 
-	let note    = $state<Note | null>(null);
-	let title   = $state('');
+	let note = $state<Note | null>(null);
+	let title = $state('');
 	let content = $state('');
 	let activeTab = $state<'write' | 'preview'>('write');
-	let newTag  = $state('');
+	let newTag = $state('');
 
 	// Re-parse whenever content changes
 	let parsed = $derived(parseContent(content));
 
 	// Live-sync note from IndexedDB; only overwrite local state when not actively typing
-	let isTypingTitle   = false;
+	let isTypingTitle = false;
 	let isTypingContent = false;
 
 	$effect(() => {
@@ -31,7 +31,7 @@
 		const sub = query.subscribe((value) => {
 			if (!value) return;
 			const isNew = !note || note.id !== value.id;
-			if (title !== value.title   && (!isTypingTitle   || isNew)) title   = value.title;
+			if (title !== value.title && (!isTypingTitle || isNew)) title = value.title;
 			if (content !== value.content && (!isTypingContent || isNew)) content = value.content;
 			note = value;
 		});
@@ -72,139 +72,145 @@
 </script>
 
 {#if note}
-<div class="editor-container">
-
-	<!-- ── Header: title + tab toggle ──────────────── -->
-	<div class="editor-header">
-		<input
-			type="text"
-			bind:value={title}
-			onfocus={() => (isTypingTitle = true)}
-			onblur={() => (isTypingTitle = false)}
-			oninput={debouncedSave}
-			placeholder="Judul catatan..."
-			class="title-input"
-		/>
-
-		<!-- Tab toggle (mobile: show one pane at a time) -->
-		<div class="tabs">
-			<button
-				class="tab-btn"
-				class:active={activeTab === 'write'}
-				onclick={() => (activeTab = 'write')}
-				title="Tulis catatan"
-			>Tulis</button>
-			<button
-				class="tab-btn"
-				class:active={activeTab === 'preview'}
-				onclick={() => (activeTab = 'preview')}
-				title="Lihat ringkasan"
-			>Ringkasan</button>
-		</div>
-	</div>
-
-	<!-- ── Tag bar ──────────────────────────────────── -->
-	<div class="tags-bar">
-		{#if note.tags && note.tags.length > 0}
-			{#each note.tags as tag}
-				<span class="tag-chip">
-					{tag}
-					<button class="remove-tag" onclick={() => removeTag(tag)} title="Hapus label">×</button>
-				</span>
-			{/each}
-		{/if}
-		<div class="new-tag-box">
+	<div class="editor-container">
+		<!-- ── Header: title + tab toggle ──────────────── -->
+		<div class="editor-header">
 			<input
 				type="text"
-				placeholder="+ Label baru..."
-				bind:value={newTag}
-				onkeydown={addTag}
-				class="new-tag-input"
+				bind:value={title}
+				onfocus={() => (isTypingTitle = true)}
+				onblur={() => (isTypingTitle = false)}
+				oninput={debouncedSave}
+				placeholder="Judul catatan..."
+				class="title-input"
 			/>
-		</div>
-	</div>
 
-	<!-- ── Workspace: write + preview ──────────────── -->
-	<div class="workspace">
-		<div class="split-view">
-
-			<!-- Write pane -->
-			<div class="pane pane-write" class:hidden-mobile={activeTab !== 'write'}>
-				<div class="pane-header">Tulis Transaksi</div>
-				<textarea
-					bind:value={content}
-					onfocus={() => (isTypingContent = true)}
-					onblur={() => (isTypingContent = false)}
-					oninput={debouncedSave}
-					placeholder="Contoh:&#10;Gaji 5jt&#10;Beli kopi -25k&#10;Bonus 2jt - 500k&#10;Belanja bulanan -1.5m"
-					class="textarea"
-				></textarea>
-				<!-- Hint for new users -->
-				<div class="write-hint">
-					Tulis nama transaksi lalu angkanya. Gunakan <strong>–</strong> untuk pengeluaran.<br>
-					Satuan: <code>k</code> = ribu &nbsp;·&nbsp; <code>jt</code> atau <code>m</code> = juta
-				</div>
+			<!-- Tab toggle (mobile: show one pane at a time) -->
+			<div class="tabs">
+				<button
+					class="tab-btn"
+					class:active={activeTab === 'write'}
+					onclick={() => (activeTab = 'write')}
+					title="Tulis catatan">Tulis</button
+				>
+				<button
+					class="tab-btn"
+					class:active={activeTab === 'preview'}
+					onclick={() => (activeTab = 'preview')}
+					title="Lihat ringkasan">Ringkasan</button
+				>
 			</div>
+		</div>
 
-			<!-- Preview pane -->
-			<div class="pane pane-preview" class:hidden-mobile={activeTab !== 'preview'}>
-				<div class="pane-header">Rincian Transaksi</div>
-				<div class="preview-scroll">
-					{#if parsed.lines.length === 0 || (parsed.lines.length === 1 && !parsed.lines[0].text.trim())}
-						<div class="preview-empty">
-							<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"
-								fill="none" stroke="currentColor" stroke-width="1.5"
-								stroke-linecap="round" stroke-linejoin="round">
-								<rect width="18" height="18" x="3" y="3" rx="2"/>
-								<path d="M9 17h6M9 13h6M9 9h4"/>
-							</svg>
-							<p>Belum ada transaksi.<br>Mulai menulis di panel sebelah!</p>
-						</div>
-					{:else}
-						<div class="preview-rows">
-							{#each parsed.lines as line}
-								{#if line.text.startsWith('# ')}
-									<h2 class="preview-h1">{line.text.replace('# ', '')}</h2>
-								{:else if line.text.startsWith('## ')}
-									<h3 class="preview-h2">{line.text.replace('## ', '')}</h3>
-								{:else if line.text.startsWith('### ')}
-									<h4 class="preview-h3">{line.text.replace('### ', '')}</h4>
-								{:else if line.value !== null}
-									<div class="preview-row"
-										class:row-income={line.value > 0}
-										class:row-expense={line.value < 0}>
-										<div class="row-label">
-											<!-- +/– icon -->
-											<span class="row-sign">{line.value > 0 ? '▲' : '▼'}</span>
-											<span class="row-desc">
-												{line.text || 'Transaksi'}
-												{#if line.expression && line.expression.trim() !== line.value.toString()}
-													<span class="row-expr">({line.expression})</span>
-												{/if}
+		<!-- ── Tag bar ──────────────────────────────────── -->
+		<div class="tags-bar">
+			{#if note.tags && note.tags.length > 0}
+				{#each note.tags as tag}
+					<span class="tag-chip">
+						{tag}
+						<button class="remove-tag" onclick={() => removeTag(tag)} title="Hapus label">×</button>
+					</span>
+				{/each}
+			{/if}
+			<div class="new-tag-box">
+				<input
+					type="text"
+					placeholder="+ Label baru..."
+					bind:value={newTag}
+					onkeydown={addTag}
+					class="new-tag-input"
+				/>
+			</div>
+		</div>
+
+		<!-- ── Workspace: write + preview ──────────────── -->
+		<div class="workspace">
+			<div class="split-view">
+				<!-- Write pane -->
+				<div class="pane pane-write" class:hidden-mobile={activeTab !== 'write'}>
+					<div class="pane-header">Tulis Transaksi</div>
+					<textarea
+						bind:value={content}
+						onfocus={() => (isTypingContent = true)}
+						onblur={() => (isTypingContent = false)}
+						oninput={debouncedSave}
+						placeholder="Contoh:&#10;Gaji 5jt&#10;Beli kopi -25k&#10;Bonus 2jt - 500k&#10;Belanja bulanan -1.5m"
+						class="textarea"
+					></textarea>
+					<!-- Hint for new users -->
+					<div class="write-hint">
+						Tulis nama transaksi lalu angkanya. Gunakan <strong>–</strong> untuk pengeluaran.<br />
+						Satuan: <code>k</code> = ribu &nbsp;·&nbsp; <code>jt</code> atau <code>m</code> = juta
+					</div>
+				</div>
+
+				<!-- Preview pane -->
+				<div class="pane pane-preview" class:hidden-mobile={activeTab !== 'preview'}>
+					<div class="pane-header">Rincian Transaksi</div>
+					<div class="preview-scroll">
+						{#if parsed.lines.length === 0 || (parsed.lines.length === 1 && !parsed.lines[0].text.trim())}
+							<div class="preview-empty">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="40"
+									height="40"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<rect width="18" height="18" x="3" y="3" rx="2" />
+									<path d="M9 17h6M9 13h6M9 9h4" />
+								</svg>
+								<p>Belum ada transaksi.<br />Mulai menulis di panel sebelah!</p>
+							</div>
+						{:else}
+							<div class="preview-rows">
+								{#each parsed.lines as line}
+									{#if line.text.startsWith('# ')}
+										<h2 class="preview-h1">{line.text.replace('# ', '')}</h2>
+									{:else if line.text.startsWith('## ')}
+										<h3 class="preview-h2">{line.text.replace('## ', '')}</h3>
+									{:else if line.text.startsWith('### ')}
+										<h4 class="preview-h3">{line.text.replace('### ', '')}</h4>
+									{:else if line.value !== null}
+										<div
+											class="preview-row"
+											class:row-income={line.value > 0}
+											class:row-expense={line.value < 0}
+										>
+											<div class="row-label">
+												<!-- +/– icon -->
+												<span class="row-sign">{line.value > 0 ? '▲' : '▼'}</span>
+												<span class="row-desc">
+													{line.text || 'Transaksi'}
+													{#if line.expression && line.expression.trim() !== line.value.toString()}
+														<span class="row-expr">({line.expression})</span>
+													{/if}
+												</span>
+											</div>
+											<span class="row-amount">
+												{line.value > 0 ? '+' : ''}{formatCurrency(line.value)}
 											</span>
 										</div>
-										<span class="row-amount">
-											{line.value > 0 ? '+' : ''}{formatCurrency(line.value)}
-										</span>
-									</div>
-								{:else if line.text.trim()}
-									<div class="preview-text">{line.text}</div>
-								{:else}
-									<div class="preview-gap"></div>
-								{/if}
-							{/each}
-						</div>
-					{/if}
+									{:else if line.text.trim()}
+										<div class="preview-text">{line.text}</div>
+									{:else}
+										<div class="preview-gap"></div>
+									{/if}
+								{/each}
+							</div>
+						{/if}
+					</div>
 				</div>
 			</div>
-
 		</div>
+
+		<!-- ── Summary footer ───────────────────────────── -->
+		<Summary income={parsed.income} expense={parsed.expense} total={parsed.total} />
 	</div>
-
-	<!-- ── Summary footer ───────────────────────────── -->
-	<Summary income={parsed.income} expense={parsed.expense} total={parsed.total} />
-
-</div>
 {/if}
 
 <style>
@@ -240,7 +246,9 @@
 		flex: 1;
 	}
 
-	.title-input::placeholder { color: var(--text-tertiary); }
+	.title-input::placeholder {
+		color: var(--text-tertiary);
+	}
 
 	/* Tab toggle */
 	.tabs {
@@ -264,8 +272,13 @@
 		transition: all 0.15s;
 	}
 
-	.tab-btn:hover    { color: var(--text-primary); }
-	.tab-btn.active   { background: var(--bg-tertiary); color: var(--accent); }
+	.tab-btn:hover {
+		color: var(--text-primary);
+	}
+	.tab-btn.active {
+		background: var(--bg-tertiary);
+		color: var(--accent);
+	}
 
 	/* ── Tags bar ────────────────────────────────────── */
 	.tags-bar {
@@ -298,7 +311,9 @@
 		padding: 0;
 		cursor: pointer;
 	}
-	.remove-tag:hover { color: var(--expense); }
+	.remove-tag:hover {
+		color: var(--expense);
+	}
 
 	.new-tag-box {
 		border: 1px dashed var(--border);
@@ -370,7 +385,10 @@
 		border-radius: 0 !important;
 	}
 
-	.textarea::placeholder { color: var(--text-tertiary); opacity: 0.6; }
+	.textarea::placeholder {
+		color: var(--text-tertiary);
+		opacity: 0.6;
+	}
 
 	.write-hint {
 		padding: 8px 12px;
@@ -380,8 +398,13 @@
 		line-height: 1.5;
 	}
 
-	.write-hint strong { color: var(--text-secondary); }
-	.write-hint code   { color: var(--accent); font-family: monospace; }
+	.write-hint strong {
+		color: var(--text-secondary);
+	}
+	.write-hint code {
+		color: var(--accent);
+		font-family: monospace;
+	}
 
 	/* Preview pane */
 	.preview-scroll {
@@ -401,9 +424,16 @@
 		text-align: center;
 	}
 
-	.preview-empty p { font-size: 0.8rem; margin: 0; line-height: 1.5; }
+	.preview-empty p {
+		font-size: 0.8rem;
+		margin: 0;
+		line-height: 1.5;
+	}
 
-	.preview-rows { display: flex; flex-direction: column; }
+	.preview-rows {
+		display: flex;
+		flex-direction: column;
+	}
 
 	.preview-row {
 		display: flex;
@@ -413,8 +443,14 @@
 		font-size: 0.85rem;
 	}
 
-	.row-income  { background: rgba(52,211,153,.06); border-left: 3px solid var(--income); }
-	.row-expense { background: rgba(248,113,113,.06); border-left: 3px solid var(--expense); }
+	.row-income {
+		background: rgba(52, 211, 153, 0.06);
+		border-left: 3px solid var(--income);
+	}
+	.row-expense {
+		background: rgba(248, 113, 113, 0.06);
+		border-left: 3px solid var(--expense);
+	}
 
 	.row-label {
 		display: flex;
@@ -430,8 +466,12 @@
 		flex-shrink: 0;
 	}
 
-	.row-income  .row-sign { color: var(--income); }
-	.row-expense .row-sign { color: var(--expense); }
+	.row-income .row-sign {
+		color: var(--income);
+	}
+	.row-expense .row-sign {
+		color: var(--expense);
+	}
 
 	.row-desc {
 		overflow: hidden;
@@ -455,8 +495,12 @@
 		white-space: nowrap;
 	}
 
-	.row-income  .row-amount { color: var(--income); }
-	.row-expense .row-amount { color: var(--expense); }
+	.row-income .row-amount {
+		color: var(--income);
+	}
+	.row-expense .row-amount {
+		color: var(--expense);
+	}
 
 	/* Headings inside preview */
 	.preview-h1 {
@@ -488,7 +532,9 @@
 		color: var(--text-secondary);
 	}
 
-	.preview-gap { height: 10px; }
+	.preview-gap {
+		height: 10px;
+	}
 
 	/* ── Responsive ──────────────────────────────────── */
 	@media (max-width: 768px) {
@@ -496,16 +542,22 @@
 			grid-template-columns: 1fr;
 		}
 
-		.hidden-mobile { display: none !important; }
+		.hidden-mobile {
+			display: none !important;
+		}
 	}
 
 	@media (min-width: 769px) {
 		/* Both panes shown on desktop; hide the tab toggle */
-		.tabs { display: none; }
+		.tabs {
+			display: none;
+		}
 	}
 
 	@media (max-width: 600px) {
-		.editor-container { padding: 0.75rem 0.9rem 0.5rem; }
+		.editor-container {
+			padding: 0.75rem 0.9rem 0.5rem;
+		}
 
 		.editor-header {
 			flex-direction: column;
@@ -513,7 +565,12 @@
 			gap: 0.5rem;
 		}
 
-		.tabs { width: 100%; }
-		.tab-btn { flex: 1; justify-content: center; }
+		.tabs {
+			width: 100%;
+		}
+		.tab-btn {
+			flex: 1;
+			justify-content: center;
+		}
 	}
 </style>

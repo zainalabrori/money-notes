@@ -18,16 +18,24 @@
 </script>
 
 <div class="backup-section">
-	<span class="cli-section-header">git remote (sync):</span>
+	<span class="section-header">Cadangan &amp; Ekspor</span>
 	<div class="btn-grid">
-		<button onclick={exportToJSON} class="backup-btn" title="Unduh Backup JSON (git push)">
-			<span>git push</span>
+		<button onclick={exportToJSON} class="backup-btn" title="Unduh cadangan semua catatan (JSON)">
+			<span>Simpan</span>
 		</button>
-		<button onclick={() => fileInput.click()} class="backup-btn" title="Pulihkan Catatan dari JSON (git pull)">
-			<span>git pull</span>
+		<button
+			onclick={() => fileInput.click()}
+			class="backup-btn"
+			title="Pulihkan catatan dari file cadangan"
+		>
+			<span>Pulihkan</span>
 		</button>
-		<button onclick={exportToCSV} class="backup-btn" title="Ekspor ke CSV (git log)">
-			<span>git log</span>
+		<button
+			onclick={exportToCSV}
+			class="backup-btn"
+			title="Ekspor semua catatan ke spreadsheet (CSV)"
+		>
+			<span>Ekspor CSV</span>
 		</button>
 	</div>
 	<input
@@ -49,10 +57,13 @@
 		gap: 6px;
 	}
 
-	.cli-section-header {
+	.section-header {
 		font-size: 0.75rem;
 		color: var(--text-tertiary);
-		font-family: 'JetBrains Mono', monospace;
+		font-family: inherit;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
 
 	.btn-grid {
@@ -67,7 +78,7 @@
 		justify-content: center;
 		padding: 6px 4px;
 		font-size: 0.75rem;
-		font-family: 'JetBrains Mono', monospace;
+		font-family: inherit;
 		background: var(--bg-primary);
 		border: 1px solid var(--border);
 		color: var(--text-secondary);

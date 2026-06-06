@@ -2,14 +2,19 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { _getSubscriptions } from '../subscribe/+server';
 import { buildPushPayload } from '@block65/webcrypto-web-push';
-import { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, CRON_SECRET } from '$env/static/private';
+import {
+	VAPID_PUBLIC_KEY,
+	VAPID_PRIVATE_KEY,
+	VAPID_SUBJECT,
+	CRON_SECRET
+} from '$env/static/private';
 
 export const POST: RequestHandler = async ({ request, platform, url }) => {
 	try {
 		// Verify authorization token to prevent unauthorized triggers
 		const authHeader = request.headers.get('Authorization');
-		const isSameOrigin = 
-			request.headers.get('origin') === url.origin || 
+		const isSameOrigin =
+			request.headers.get('origin') === url.origin ||
 			request.headers.get('referer')?.startsWith(url.origin);
 
 		if (!isSameOrigin && CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
@@ -19,7 +24,8 @@ export const POST: RequestHandler = async ({ request, platform, url }) => {
 		// Read customizable message from request if any
 		const bodyData = await request.json().catch(() => ({}));
 		const title = bodyData.title || 'Money Notes';
-		const messageText = bodyData.body || 'Jangan lupa untuk mencatat transaksi keuanganmu hari ini! 💵';
+		const messageText =
+			bodyData.body || 'Jangan lupa untuk mencatat transaksi keuanganmu hari ini! 💵';
 
 		// Get all subscriptions
 		const subscriptions = await _getSubscriptions(platform);
@@ -92,7 +98,8 @@ export const GET: RequestHandler = async () => {
 	return json(
 		{
 			error: 'Method GET Not Allowed',
-			message: 'Untuk memicu push notification, Anda harus mengirimkan request POST (bukan membuka langsung di browser yang menggunakan GET). Pastikan metode di cron-job.org diatur ke POST.'
+			message:
+				'Untuk memicu push notification, Anda harus mengirimkan request POST (bukan membuka langsung di browser yang menggunakan GET). Pastikan metode di cron-job.org diatur ke POST.'
 		},
 		{ status: 405 }
 	);

@@ -7,7 +7,10 @@ precacheAndRoute(self.__WB_MANIFEST);
 
 // Handle push notification events
 self.addEventListener('push', (event) => {
-	let data = { title: 'Money Notes', body: 'Jangan lupa untuk mencatat transaksi keuanganmu hari ini! 💵' };
+	let data = {
+		title: 'Money Notes',
+		body: 'Jangan lupa untuk mencatat transaksi keuanganmu hari ini! 💵'
+	};
 
 	try {
 		if (event.data) {
@@ -30,9 +33,7 @@ self.addEventListener('push', (event) => {
 		}
 	};
 
-	event.waitUntil(
-		self.registration.showNotification(data.title, options)
-	);
+	event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
 // Handle notification click events (open the PWA)

@@ -22,32 +22,37 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			await kv.put(key, JSON.stringify(subscription), {
 				expirationTtl: 30 * 24 * 60 * 60 // Expire in 30 days
 			});
-		} 
+		}
 		// 2. If Cloudflare D1 database binding is available, store it there
 		else if (cfPlatform?.env?.DB) {
 			const db = cfPlatform.env.DB;
 			// Create table if it doesn't exist
-			await db.prepare(`
+			await db
+				.prepare(
+					`
 				CREATE TABLE IF NOT EXISTS push_subscriptions (
 					endpoint TEXT PRIMARY KEY,
 					p256dh TEXT,
 					auth TEXT,
 					created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 				)
-			`).run();
+			`
+				)
+				.run();
 
-			await db.prepare(`
+			await db
+				.prepare(
+					`
 				INSERT INTO push_subscriptions (endpoint, p256dh, auth)
 				VALUES (?, ?, ?)
 				ON CONFLICT(endpoint) DO UPDATE SET
 					p256dh = excluded.p256dh,
 					auth = excluded.auth
-			`).bind(
-				subscription.endpoint,
-				subscription.keys?.p256dh || '',
-				subscription.keys?.auth || ''
-			).run();
-		} 
+			`
+				)
+				.bind(subscription.endpoint, subscription.keys?.p256dh || '', subscription.keys?.auth || '')
+				.run();
+		}
 		// 3. Fallback to in-memory for local dev
 		else {
 			const exists = devSubscriptions.some((s) => s.endpoint === subscription.endpoint);

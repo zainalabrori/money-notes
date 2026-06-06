@@ -5,7 +5,7 @@
 
 	// Percentage of income that has been spent
 	let expenseRatio = $derived(income > 0 ? Math.min((Math.abs(expense) / income) * 100, 100) : 0);
-	let isDeficit    = $derived(income === 0 && Math.abs(expense) > 0);
+	let isDeficit = $derived(income === 0 && Math.abs(expense) > 0);
 
 	// Color category for the ratio bar
 	let ratioLevel = $derived.by(() => {
@@ -16,17 +16,20 @@
 
 	// Human-readable advice based on spending ratio
 	let ratioMessage = $derived.by(() => {
-		if (isDeficit)         return '⚠️ Semua transaksi adalah pengeluaran. Tidak ada pemasukan tercatat.';
-		if (expenseRatio > 80) return '🚨 Pengeluaran sudah melampaui 80% dari pemasukan. Perhatikan pengeluaran Anda!';
-		if (expenseRatio > 50) return `⚠️ Pengeluaran cukup besar. Sisa ${Math.round(100 - expenseRatio)}% dari pemasukan.`;
-		if (expenseRatio > 0)  return `✅ Bagus! Pengeluaran masih terkendali di ${Math.round(expenseRatio)}% dari pemasukan.`;
+		if (isDeficit) return '⚠️ Semua transaksi adalah pengeluaran. Tidak ada pemasukan tercatat.';
+		if (expenseRatio > 80)
+			return '🚨 Pengeluaran sudah melampaui 80% dari pemasukan. Perhatikan pengeluaran Anda!';
+		if (expenseRatio > 50)
+			return `⚠️ Pengeluaran cukup besar. Sisa ${Math.round(100 - expenseRatio)}% dari pemasukan.`;
+		if (expenseRatio > 0)
+			return `✅ Bagus! Pengeluaran masih terkendali di ${Math.round(expenseRatio)}% dari pemasukan.`;
 		return 'Pemasukan penuh — belum ada pengeluaran tercatat.';
 	});
 
 	// Progress bar character count
 	const BAR_LEN = 20;
 	let filled = $derived(isDeficit ? BAR_LEN : Math.round((expenseRatio / 100) * BAR_LEN));
-	let empty  = $derived(BAR_LEN - filled);
+	let empty = $derived(BAR_LEN - filled);
 </script>
 
 <div class="summary">
@@ -119,10 +122,18 @@
 		white-space: nowrap;
 	}
 
-	.stat-value.income  { color: var(--income); }
-	.stat-value.expense { color: var(--expense); }
-	.stat-value.balance.positive { color: var(--income); }
-	.stat-value.balance.negative { color: var(--expense); }
+	.stat-value.income {
+		color: var(--income);
+	}
+	.stat-value.expense {
+		color: var(--expense);
+	}
+	.stat-value.balance.positive {
+		color: var(--income);
+	}
+	.stat-value.balance.negative {
+		color: var(--expense);
+	}
 
 	.divider {
 		width: 1px;
@@ -160,9 +171,15 @@
 		font-weight: 700;
 	}
 
-	.ratio-pct.safe    { color: var(--income); }
-	.ratio-pct.warning { color: #fb923c; }
-	.ratio-pct.danger  { color: var(--expense); }
+	.ratio-pct.safe {
+		color: var(--income);
+	}
+	.ratio-pct.warning {
+		color: #fb923c;
+	}
+	.ratio-pct.danger {
+		color: var(--expense);
+	}
 
 	/* ASCII bar */
 	.ratio-bar {
@@ -173,12 +190,23 @@
 		user-select: none;
 	}
 
-	.bar-bracket { color: var(--text-tertiary); font-weight: 700; }
-	.bar-empty   { color: var(--text-tertiary); }
+	.bar-bracket {
+		color: var(--text-tertiary);
+		font-weight: 700;
+	}
+	.bar-empty {
+		color: var(--text-tertiary);
+	}
 
-	.bar-fill.safe    { color: var(--income); }
-	.bar-fill.warning { color: #fb923c; }
-	.bar-fill.danger  { color: var(--expense); }
+	.bar-fill.safe {
+		color: var(--income);
+	}
+	.bar-fill.warning {
+		color: #fb923c;
+	}
+	.bar-fill.danger {
+		color: var(--expense);
+	}
 
 	.ratio-msg {
 		margin: 0;
@@ -214,6 +242,8 @@
 			margin-top: 2px;
 		}
 
-		.stat-value { font-size: 0.88rem; }
+		.stat-value {
+			font-size: 0.88rem;
+		}
 	}
 </style>
