@@ -3,239 +3,217 @@
 
 	let { income = 0, expense = 0, total = 0 } = $props();
 
+	// Percentage of income that has been spent
 	let expenseRatio = $derived(income > 0 ? Math.min((Math.abs(expense) / income) * 100, 100) : 0);
-	let isDeficit = $derived(income === 0 && Math.abs(expense) > 0);
+	let isDeficit    = $derived(income === 0 && Math.abs(expense) > 0);
 
-	let ratioColorClass = $derived.by(() => {
-		if (isDeficit || expenseRatio > 80) return 'ratio-danger';
-		if (expenseRatio > 50) return 'ratio-warning';
-		return 'ratio-safe';
+	// Color category for the ratio bar
+	let ratioLevel = $derived.by(() => {
+		if (isDeficit || expenseRatio > 80) return 'danger';
+		if (expenseRatio > 50) return 'warning';
+		return 'safe';
 	});
 
-	const barChars = 20;
-	let filledChars = $derived(isDeficit ? barChars : Math.round((expenseRatio / 100) * barChars));
-	let emptyChars = $derived(barChars - filledChars);
+	// Human-readable advice based on spending ratio
+	let ratioMessage = $derived.by(() => {
+		if (isDeficit)         return '⚠️ Semua transaksi adalah pengeluaran. Tidak ada pemasukan tercatat.';
+		if (expenseRatio > 80) return '🚨 Pengeluaran sudah melampaui 80% dari pemasukan. Perhatikan pengeluaran Anda!';
+		if (expenseRatio > 50) return `⚠️ Pengeluaran cukup besar. Sisa ${Math.round(100 - expenseRatio)}% dari pemasukan.`;
+		if (expenseRatio > 0)  return `✅ Bagus! Pengeluaran masih terkendali di ${Math.round(expenseRatio)}% dari pemasukan.`;
+		return 'Pemasukan penuh — belum ada pengeluaran tercatat.';
+	});
+
+	// Progress bar character count
+	const BAR_LEN = 20;
+	let filled = $derived(isDeficit ? BAR_LEN : Math.round((expenseRatio / 100) * BAR_LEN));
+	let empty  = $derived(BAR_LEN - filled);
 </script>
 
-<div class="summary-card">
-	<div class="summary-header">
-		<span class="cli-section-header">Summary (git diff --stat):</span>
-	</div>
-	<div class="summary-data">
-		<div class="data-block block-income">
-			<span class="block-label">pemasukan (+)</span>
-			<span class="block-value">+{formatCurrency(income)}</span>
-		</div>
-		
-		<div class="data-block block-expense">
-			<span class="block-label">pengeluaran (-)</span>
-			<span class="block-value">-{formatCurrency(Math.abs(expense))}</span>
+<div class="summary">
+	<!-- ── Three stat blocks ─────────────────────── -->
+	<div class="stats">
+		<div class="stat">
+			<span class="stat-label">Pemasukan</span>
+			<span class="stat-value income">+{formatCurrency(income)}</span>
 		</div>
 
-		<div class="data-block block-balance">
-			<span class="block-label">saldo (net)</span>
-			<span class="block-value" class:positive={total >= 0} class:negative={total < 0}>
+		<div class="divider"></div>
+
+		<div class="stat">
+			<span class="stat-label">Pengeluaran</span>
+			<span class="stat-value expense">-{formatCurrency(Math.abs(expense))}</span>
+		</div>
+
+		<div class="divider"></div>
+
+		<div class="stat">
+			<span class="stat-label">Saldo Akhir</span>
+			<span class="stat-value balance" class:positive={total >= 0} class:negative={total < 0}>
 				{formatCurrency(total)}
 			</span>
 		</div>
 	</div>
 
-	<!-- Expense Ratio CLI Progress Bar -->
+	<!-- ── Spending ratio bar ─────────────────────── -->
 	{#if income > 0 || Math.abs(expense) > 0}
 		<div class="ratio-section">
-			<div class="ratio-meta">
-				<span class="ratio-label">ratio:</span>
-				<span class="ratio-percentage" class:deficit={isDeficit} class:warning={expenseRatio > 50 && expenseRatio <= 80} class:safe={expenseRatio <= 50 && !isDeficit}>
-					{isDeficit ? 'DEFICIT 100%' : `${Math.round(expenseRatio)}%`}
+			<div class="ratio-header">
+				<span class="ratio-title">Rasio Pengeluaran</span>
+				<span class="ratio-pct {ratioLevel}">
+					{isDeficit ? 'Defisit' : `${Math.round(expenseRatio)}%`}
 				</span>
 			</div>
-			
-			<div class="ratio-cli-bar">
-				<span class="bar-brackets">[</span>
-				<span class="bar-fill {ratioColorClass}">{"=".repeat(Math.max(0, filledChars - 1)) + (filledChars > 0 ? ">" : "")}</span>
-				<span class="bar-empty">{".".repeat(emptyChars)}</span>
-				<span class="bar-brackets">]</span>
+
+			<!-- ASCII-style progress bar (keep the original character-art charm) -->
+			<div class="ratio-bar">
+				<span class="bar-bracket">[</span>
+				<span class="bar-fill {ratioLevel}">
+					{'='.repeat(Math.max(0, filled - 1))}{filled > 0 ? '>' : ''}
+				</span>
+				<span class="bar-empty">{'·'.repeat(empty)}</span>
+				<span class="bar-bracket">]</span>
 			</div>
-			
-			<span class="ratio-desc">
-				{#if isDeficit}
-					⚠️ Semua transaksi merupakan pengeluaran (deficit).
-				{:else if expenseRatio > 80}
-					🚨 Pengeluaran kritis! Sudah melampaui 80% dari total pemasukan.
-				{:else if expenseRatio > 50}
-					⚠️ Pengeluaran sedang. Sisa dana sekitar {Math.round(100 - expenseRatio)}%.
-				{:else if expenseRatio > 0}
-					✨ Sangat bagus! Pengeluaran terkendali di bawah 50% pemasukan.
-				{:else}
-					Pemasukan penuh, belum ada pengeluaran terdaftar.
-				{/if}
-			</span>
+
+			<p class="ratio-msg">{ratioMessage}</p>
 		</div>
 	{/if}
 </div>
 
 <style>
-	.summary-card {
+	.summary {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
-		padding: 1rem;
+		gap: 0.65rem;
+		padding: 0.85rem 1rem;
 		border-top: 1px solid var(--border);
 		background: var(--bg-secondary);
-		border-radius: 6px;
-		margin-top: 0.5rem;
+		border-radius: 0 0 var(--radius-md) var(--radius-md);
 	}
 
-	.cli-section-header {
-		font-size: 0.75rem;
-		color: var(--text-tertiary);
-		font-family: 'JetBrains Mono', monospace;
-	}
-
-	.summary-data {
+	/* ── Stats row ───────────────────────────────── */
+	.stats {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
-		gap: 1rem;
+		gap: 0;
 	}
 
-	.data-block {
+	.stat {
+		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
-		flex: 1;
+		gap: 2px;
 	}
 
-	.block-label {
-		font-size: 0.7rem;
-		font-weight: 700;
-		text-transform: lowercase;
+	.stat-label {
+		font-size: 0.68rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
 		color: var(--text-tertiary);
-		font-family: 'JetBrains Mono', monospace;
 	}
 
-	.block-value {
-		font-family: 'JetBrains Mono', monospace;
-		font-weight: 700;
+	.stat-value {
 		font-size: 0.95rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
 
-	.block-income .block-value {
-		color: var(--income);
+	.stat-value.income  { color: var(--income); }
+	.stat-value.expense { color: var(--expense); }
+	.stat-value.balance.positive { color: var(--income); }
+	.stat-value.balance.negative { color: var(--expense); }
+
+	.divider {
+		width: 1px;
+		height: 32px;
+		background: var(--border);
+		margin: 0 1rem;
+		flex-shrink: 0;
 	}
 
-	.block-expense .block-value {
-		color: var(--expense);
-	}
-
-	.block-balance .block-value.positive {
-		color: var(--income);
-	}
-
-	.block-balance .block-value.negative {
-		color: var(--expense);
-	}
-
-	/* Ratio Meter */
+	/* ── Ratio section ───────────────────────────── */
 	.ratio-section {
 		display: flex;
 		flex-direction: column;
-		gap: 0.4rem;
+		gap: 5px;
 		padding-top: 0.6rem;
 		border-top: 1px dashed var(--border);
 	}
 
-	.ratio-meta {
+	.ratio-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 	}
 
-	.ratio-label {
-		font-size: 0.75rem;
+	.ratio-title {
+		font-size: 0.72rem;
 		font-weight: 600;
 		color: var(--text-tertiary);
-		font-family: 'JetBrains Mono', monospace;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
 	}
 
-	.ratio-percentage {
-		font-family: 'JetBrains Mono', monospace;
+	.ratio-pct {
 		font-size: 0.8rem;
 		font-weight: 700;
-		color: var(--expense);
 	}
 
-	.ratio-percentage.safe {
-		color: var(--income);
-	}
+	.ratio-pct.safe    { color: var(--income); }
+	.ratio-pct.warning { color: #fb923c; }
+	.ratio-pct.danger  { color: var(--expense); }
 
-	.ratio-percentage.warning {
-		color: #ff9f43;
-	}
-
-	.ratio-cli-bar {
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.95rem;
+	/* ASCII bar */
+	.ratio-bar {
+		font-family: 'JetBrains Mono', 'Fira Code', monospace;
+		font-size: 0.9rem;
 		display: flex;
-		align-items: center;
 		letter-spacing: 0.5px;
+		user-select: none;
 	}
 
-	.bar-brackets {
-		color: var(--text-tertiary);
-		font-weight: 700;
-	}
+	.bar-bracket { color: var(--text-tertiary); font-weight: 700; }
+	.bar-empty   { color: var(--text-tertiary); }
 
-	.bar-empty {
-		color: var(--text-tertiary);
-	}
+	.bar-fill.safe    { color: var(--income); }
+	.bar-fill.warning { color: #fb923c; }
+	.bar-fill.danger  { color: var(--expense); }
 
-	.bar-fill.ratio-safe {
-		color: var(--income);
-	}
-
-	.bar-fill.ratio-warning {
-		color: #ff9f43;
-	}
-
-	.bar-fill.ratio-danger {
-		color: var(--expense);
-	}
-
-	.ratio-desc {
-		font-size: 0.7rem;
+	.ratio-msg {
+		margin: 0;
+		font-size: 0.72rem;
 		color: var(--text-secondary);
 		line-height: 1.4;
 	}
 
+	/* ── Mobile ──────────────────────────────────── */
 	@media (max-width: 600px) {
-		.summary-card {
-			gap: 0.75rem;
-			padding: 0.75rem;
-		}
-
-		.summary-data {
+		.stats {
 			flex-direction: column;
 			align-items: stretch;
-			gap: 0.5rem;
+			gap: 0;
 		}
 
-		.data-block {
+		.stat {
 			flex-direction: row;
 			justify-content: space-between;
 			align-items: center;
-			padding: 0.1rem 0;
+			padding: 4px 0;
 		}
 
-		.block-value {
-			font-size: 0.85rem;
+		.divider {
+			width: 100%;
+			height: 1px;
+			margin: 0;
 		}
 
-		.block-balance {
+		.stat:last-child {
 			border-top: 1px solid var(--border);
-			padding-top: 0.4rem;
-			margin-top: 0.2rem;
+			padding-top: 6px;
+			margin-top: 2px;
 		}
+
+		.stat-value { font-size: 0.88rem; }
 	}
 </style>

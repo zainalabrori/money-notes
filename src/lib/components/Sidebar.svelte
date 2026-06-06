@@ -13,46 +13,45 @@
 		isSidebarVisible: boolean;
 	} = $props();
 
-	let allNotes = $state<Note[]>([]);
+	let allNotes    = $state<Note[]>([]);
 	let searchQuery = $state('');
-	let selectedMonth = $state<string>('all'); // format: YYYY-MM
-	let selectedTag = $state<string | null>(null);
+	let selectedMonth = $state<string>('all');
+	let selectedTag   = $state<string | null>(null);
 
-	// Derived: all unique tags present in the notes
+	// Collect unique tags from all notes
 	let allTags = $derived.by(() => {
 		const tags = new Set<string>();
-		allNotes.forEach((n) => {
-			if (n.tags) {
-				n.tags.forEach((t) => tags.add(t));
-			}
-		});
+		allNotes.forEach((n) => n.tags?.forEach((t) => tags.add(t)));
 		return Array.from(tags).sort();
 	});
 
+	// Filter + sort notes by search, month, and tag
 	let filteredNotes = $derived(
 		allNotes
 			.filter((note) => {
-				const matchesSearch =
-					note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-					note.content.toLowerCase().includes(searchQuery.toLowerCase());
+				const q = searchQuery.toLowerCase();
+				const matchSearch =
+					note.title.toLowerCase().includes(q) ||
+					note.content.toLowerCase().includes(q);
 
-				const matchesMonth =
+				const matchMonth =
 					selectedMonth === 'all' ||
 					(() => {
-						const noteDate = new Date(note.createdAt);
-						const monthKey = `${noteDate.getFullYear()}-${String(noteDate.getMonth() + 1).padStart(2, '0')}`;
-						return monthKey === selectedMonth;
+						const d = new Date(note.createdAt);
+						const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+						return key === selectedMonth;
 					})();
 
-				const matchesTag =
+				const matchTag =
 					selectedTag === null ||
 					(note.tags && note.tags.includes(selectedTag));
 
-				return matchesSearch && matchesMonth && matchesTag;
+				return matchSearch && matchMonth && matchTag;
 			})
 			.sort((a, b) => b.updatedAt - a.updatedAt)
 	);
 
+	// Build list of months that have at least one note
 	let availableMonths = $derived.by(() => {
 		const months = new Set<string>();
 		allNotes.forEach((n) => {
@@ -63,107 +62,106 @@
 	});
 
 	$effect(() => {
-		const unsubscribe = notes.subscribe((value) => {
-			allNotes = value;
-		});
-		return unsubscribe;
+		const unsub = notes.subscribe((v) => { allNotes = v; });
+		return unsub;
 	});
 
 	async function createNote() {
-		const id = await notes.add();
-		selectedNoteId = id;
+		selectedNoteId = await notes.add();
 	}
 
 	async function deleteNote(id: number) {
-		if (confirm('Hapus catatan keuangan ini? (git rm)')) {
+		if (confirm('Hapus catatan ini? Tidak bisa dibatalkan.')) {
 			await notes.delete(id);
-			if (selectedNoteId === id) {
-				selectedNoteId = null;
-			}
+			if (selectedNoteId === id) selectedNoteId = null;
 		}
 	}
 
-	function getNoteFinancials(content: string) {
-		return parseContent(content);
+	// Format month key "YYYY-MM" → "Januari 2025" etc.
+	function formatMonth(key: string) {
+		const [year, month] = key.split('-');
+		return new Date(Number(year), Number(month) - 1).toLocaleDateString('id-ID', {
+			month: 'long',
+			year: 'numeric'
+		});
 	}
 
-	function generateHash(id: number, updatedAt: number): string {
-		const val = (id * 9876543 + updatedAt).toString(16);
-		return val.substring(0, 7).padEnd(7, 'f');
+	// Format a timestamp as a relative label
+	function formatDate(ts: number) {
+		const d = new Date(ts);
+		return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 	}
 </script>
 
 <aside class="sidebar" class:collapsed={!isSidebarVisible}>
+	<!-- ── Header ───────────────────────────────────── -->
 	<div class="sidebar-header">
-		<div class="repo-info">
-			<span class="repo-label">repo:</span>
-			<span class="repo-name">money-notes</span>
-			<span class="branch-tag">[main]</span>
-		</div>
+		<span class="sidebar-title">Catatan Saya</span>
 		<button
+			class="icon-btn"
 			onclick={() => (isSidebarVisible = false)}
-			class="toggle-btn"
-			title="Tutup Sidebar (Ctrl+B)"
+			title="Tutup daftar (Ctrl+B)"
 		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="14"
-				height="14"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2.5"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				class="lucide lucide-panel-left-close"
-				><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /><path
-					d="m16 15-3-3 3-3"
-				/></svg>
+			<!-- Panel-left-close icon -->
+			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+				fill="none" stroke="currentColor" stroke-width="2.5"
+				stroke-linecap="round" stroke-linejoin="round">
+				<rect width="18" height="18" x="3" y="3" rx="2"/>
+				<path d="M9 3v18"/><path d="m16 15-3-3 3-3"/>
+			</svg>
 		</button>
 	</div>
 
-	<!-- CLI Actions -->
-	<div class="cli-actions">
-		<button onclick={createNote} class="cli-action-btn" title="Buat Catatan Baru (touch)">
-			<span>$ touch ledger.txt</span>
+	<!-- ── New Note button ──────────────────────────── -->
+	<div class="actions-area">
+		<button class="new-note-btn" onclick={createNote} title="Buat catatan baru (Ctrl+N)">
+			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+				fill="none" stroke="currentColor" stroke-width="2.5"
+				stroke-linecap="round" stroke-linejoin="round">
+				<path d="M12 5v14M5 12h14"/>
+			</svg>
+			Catatan Baru
 		</button>
 	</div>
 
-	<!-- Searching & Date selection -->
+	<!-- ── Search & month filter ────────────────────── -->
 	<div class="filters">
-		<div class="search-wrapper">
-			<span class="cli-prompt-char">$ grep</span>
-			<input type="text" bind:value={searchQuery} placeholder="Cari catatan..." class="search-input" />
+		<div class="search-box">
+			<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+				fill="none" stroke="currentColor" stroke-width="2.5"
+				stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+				<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+			</svg>
+			<input
+				type="text"
+				bind:value={searchQuery}
+				placeholder="Cari catatan..."
+				class="search-input"
+			/>
 		</div>
 
-		<div class="filter-row">
-			<span class="cli-prompt-char">--month=</span>
-			<select bind:value={selectedMonth} class="month-select">
-				<option value="all">all</option>
-				{#each availableMonths as month}
-					<option value={month}>
-						{month}
-					</option>
-				{/each}
-			</select>
-		</div>
+		<select bind:value={selectedMonth} class="month-select">
+			<option value="all">Semua bulan</option>
+			{#each availableMonths as month}
+				<option value={month}>{formatMonth(month)}</option>
+			{/each}
+		</select>
 	</div>
 
-	<!-- Horizontal scrollable Tag directory -->
+	<!-- ── Tag filter pills ─────────────────────────── -->
 	{#if allTags.length > 0}
-		<div class="tag-directory">
-			<span class="branch-icon-label">git checkout [branch]:</span>
-			<div class="tag-scroll-row">
-				<button 
-					class="tag-dir-btn" 
+		<div class="tag-bar">
+			<div class="tag-scroll">
+				<button
+					class="tag-pill"
 					class:active={selectedTag === null}
 					onclick={() => selectedTag = null}
 				>
-					main
+					Semua
 				</button>
 				{#each allTags as tag}
-					<button 
-						class="tag-dir-btn" 
+					<button
+						class="tag-pill"
 						class:active={selectedTag === tag}
 						onclick={() => selectedTag = tag}
 					>
@@ -174,15 +172,15 @@
 		</div>
 	{/if}
 
-	<!-- Note lists scroll area -->
+	<!-- ── Note list ─────────────────────────────────── -->
 	<div class="note-list">
 		{#if filteredNotes.length === 0}
-			<div class="empty-list-state">
-				<p>No ledgers found</p>
+			<div class="empty-list">
+				<p>Tidak ada catatan ditemukan</p>
 			</div>
 		{:else}
 			{#each filteredNotes as note}
-				{@const fin = getNoteFinancials(note.content)}
+				{@const fin = parseContent(note.content)}
 				<div
 					class="note-item"
 					class:active={selectedNoteId === note.id}
@@ -191,69 +189,67 @@
 					role="button"
 					tabindex="0"
 				>
-					<div class="note-info">
-						<div class="note-row-top">
-							<span class="note-title" class:active-title={selectedNoteId === note.id}>
-								{#if selectedNoteId === note.id}
-									<span class="git-status-prefix-active">&gt;</span>
-								{:else}
-									<span class="git-status-prefix-inactive">&nbsp;</span>
-								{/if}
-								{note.title ? `${note.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}.ledger` : 'untitled.ledger'}
+					<div class="note-meta">
+						<!-- Title row -->
+						<div class="note-top-row">
+							<span class="note-title">
+								{note.title || 'Catatan tanpa judul'}
 							</span>
-							
-							<span class="note-balance-delta" class:pos={fin.total > 0} class:neg={fin.total < 0}>
-								{fin.total > 0 ? '+' : ''}{formatCurrency(fin.total)}
+							<!-- Net balance badge -->
+							<span class="note-balance" class:pos={fin.total >= 0} class:neg={fin.total < 0}>
+								{fin.total >= 0 ? '+' : ''}{formatCurrency(fin.total)}
 							</span>
 						</div>
 
-						<div class="note-row-bottom">
-							<span class="note-date">
-								commit: {generateHash(note.id!, note.updatedAt)}
-							</span>
-
+						<!-- Date + tags row -->
+						<div class="note-bottom-row">
+							<span class="note-date">{formatDate(note.updatedAt)}</span>
 							{#if note.tags && note.tags.length > 0}
-								<div class="note-item-tags">
+								<div class="note-tags">
 									{#each note.tags.slice(0, 2) as tag}
-										<span class="note-item-tag">{tag}</span>
+										<span class="note-tag">{tag}</span>
 									{/each}
 								</div>
 							{/if}
 						</div>
 					</div>
-					
+
+					<!-- Delete button (visible on hover) -->
 					<button
-						onclick={(e) => {
-							e.stopPropagation();
-							deleteNote(note.id!);
-						}}
 						class="delete-btn"
-						title="git rm"
+						onclick={(e) => { e.stopPropagation(); deleteNote(note.id!); }}
+						title="Hapus catatan"
 					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"/></svg>
+						<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+							fill="none" stroke="currentColor" stroke-width="2.5"
+							stroke-linecap="round" stroke-linejoin="round">
+							<path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+							<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+						</svg>
 					</button>
 				</div>
 			{/each}
 		{/if}
 	</div>
 
+	<!-- Backup/export section at bottom -->
 	<Backup />
 </aside>
 
 <style>
+	/* ── Sidebar shell ───────────────────────────────── */
 	.sidebar {
 		width: 280px;
-		border-right: 1px solid var(--border);
+		flex-shrink: 0;
 		display: flex;
 		flex-direction: column;
 		background: var(--bg-secondary);
-		flex-shrink: 0;
+		border-right: 1px solid var(--border);
 		transition:
-			width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-			margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-			border-right-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			width 0.3s cubic-bezier(.4,0,.2,1),
+			margin-left 0.3s cubic-bezier(.4,0,.2,1),
+			border-right-color 0.3s cubic-bezier(.4,0,.2,1);
 		z-index: 5;
-		font-family: 'JetBrains Mono', monospace;
 	}
 
 	.sidebar.collapsed {
@@ -263,90 +259,13 @@
 		overflow: hidden;
 	}
 
-	.sidebar-header {
-		padding: 1rem;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		border-bottom: 1px solid var(--border);
-	}
-
-	.repo-info {
-		font-size: 0.8rem;
-		display: flex;
-		align-items: center;
-		gap: 6px;
-	}
-
-	.repo-label {
-		color: var(--text-tertiary);
-	}
-
-	.repo-name {
-		color: var(--text-primary);
-		font-weight: 700;
-	}
-
-	.branch-tag {
-		color: #ff9f43; /* orange branch style */
-		font-weight: 700;
-	}
-
-	.cli-actions {
-		padding: 0.75rem 1rem 0.5rem;
-	}
-
-	.cli-action-btn {
-		width: 100%;
-		background: var(--bg-primary);
-		border: 1px solid var(--border);
-		color: var(--accent); /* Terminal Green */
-		padding: 8px 12px;
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.8rem;
-		border-radius: 4px;
-		text-align: left;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: flex-start;
-		font-weight: 700;
-		transition: all 0.2s ease;
-	}
-
-	.cli-action-btn:hover {
-		background: var(--bg-tertiary);
-		color: var(--accent-light);
-		border-color: var(--text-secondary);
-	}
-
-	.toggle-btn {
-		background: none;
-		border: 1px solid var(--border);
-		color: var(--text-secondary);
-		padding: 0.35rem;
-		border-radius: 4px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	.toggle-btn:hover {
-		color: var(--text-primary);
-		background: var(--bg-tertiary);
-		border-color: var(--text-secondary);
-	}
-
 	@media (max-width: 600px) {
 		.sidebar {
 			position: absolute;
-			z-index: 10;
 			height: 100%;
-			box-shadow: 4px 0 25px rgba(0, 0, 0, 0.6);
 			left: 0;
-			transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			box-shadow: 4px 0 24px rgba(0,0,0,.6);
+			transition: transform 0.3s cubic-bezier(.4,0,.2,1);
 		}
 
 		.sidebar.collapsed {
@@ -357,248 +276,254 @@
 		}
 	}
 
+	/* ── Header ─────────────────────────────────────── */
+	.sidebar-header {
+		padding: 0.9rem 1rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.sidebar-title {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--text-primary);
+	}
+
+	.icon-btn {
+		background: transparent;
+		border: 1px solid var(--border);
+		color: var(--text-secondary);
+		padding: 5px 7px;
+		border-radius: var(--radius-sm);
+		display: flex;
+		align-items: center;
+		transition: all 0.2s;
+	}
+
+	.icon-btn:hover {
+		color: var(--text-primary);
+		background: var(--bg-tertiary);
+		border-color: var(--text-secondary);
+	}
+
+	/* ── New note button ─────────────────────────────── */
+	.actions-area {
+		padding: 0.75rem 1rem 0.5rem;
+	}
+
+	.new-note-btn {
+		width: 100%;
+		background: var(--bg-primary);
+		border: 1px solid var(--border);
+		color: var(--accent);
+		padding: 8px 12px;
+		border-radius: var(--radius-sm);
+		font-size: 0.85rem;
+		font-weight: 600;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		transition: all 0.2s;
+	}
+
+	.new-note-btn:hover {
+		background: var(--bg-tertiary);
+		border-color: var(--text-secondary);
+	}
+
+	/* ── Filters ─────────────────────────────────────── */
 	.filters {
-		padding: 0.5rem 1rem 0.75rem;
+		padding: 0 1rem 0.75rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 		border-bottom: 1px solid var(--border);
 	}
 
-	.search-wrapper {
+	.search-box {
 		display: flex;
 		align-items: center;
 		background: var(--bg-primary);
 		border: 1px solid var(--border);
-		border-radius: 4px;
-		padding: 0 8px;
-		gap: 6px;
-		height: 32px;
+		border-radius: var(--radius-sm);
+		padding: 0 10px;
+		gap: 7px;
+		height: 34px;
 	}
 
-	.cli-prompt-char {
-		color: #ff5c57; /* red/pink option */
-		font-size: 0.8rem;
-		font-weight: 700;
-		white-space: nowrap;
+	.search-box:focus-within {
+		border-color: var(--accent);
+		box-shadow: 0 0 0 3px var(--accent-glow);
 	}
+
+	.search-icon { color: var(--text-tertiary); flex-shrink: 0; }
 
 	.search-input {
 		background: transparent !important;
 		border: none !important;
 		padding: 0 !important;
 		box-shadow: none !important;
-		font-size: 0.8rem !important;
+		font-size: 0.82rem !important;
 		width: 100%;
-		font-family: 'JetBrains Mono', monospace;
-	}
-
-	.filter-row {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		height: 32px;
+		color: var(--text-primary);
 	}
 
 	.month-select {
-		flex: 1;
-		height: 100%;
-		font-size: 0.8rem;
-		padding: 0 6px;
+		width: 100%;
+		height: 34px;
+		font-size: 0.82rem;
+		padding: 0 8px;
 		background: var(--bg-primary);
 		border: 1px solid var(--border);
-		border-radius: 4px;
+		border-radius: var(--radius-sm);
 		cursor: pointer;
-		font-family: 'JetBrains Mono', monospace;
+		color: var(--text-primary);
 	}
 
-	/* Tag Directory scrollbar */
-	.tag-directory {
-		padding: 0.75rem 1rem 0.5rem;
+	/* ── Tag pills ───────────────────────────────────── */
+	.tag-bar {
+		padding: 0.6rem 1rem;
 		border-bottom: 1px solid var(--border);
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
 	}
 
-	.branch-icon-label {
-		font-size: 0.7rem;
-		color: var(--text-tertiary);
-	}
-
-	.tag-scroll-row {
+	.tag-scroll {
 		display: flex;
 		gap: 4px;
 		overflow-x: auto;
-		scrollbar-width: none; /* Firefox */
+		scrollbar-width: none;
 	}
 
-	.tag-scroll-row::-webkit-scrollbar {
-		display: none; /* Safari / Chrome */
-	}
+	.tag-scroll::-webkit-scrollbar { display: none; }
 
-	.tag-dir-btn {
+	.tag-pill {
 		background: var(--bg-primary);
 		border: 1px solid var(--border);
 		color: var(--text-secondary);
-		padding: 2px 8px;
-		border-radius: 4px;
+		padding: 2px 10px;
+		border-radius: 999px;
 		font-size: 0.75rem;
 		white-space: nowrap;
 		cursor: pointer;
-		font-family: 'JetBrains Mono', monospace;
-		transition: all 0.2s ease;
+		transition: all 0.15s;
 	}
 
-	.tag-dir-btn:hover {
+	.tag-pill:hover {
 		color: var(--text-primary);
 		border-color: var(--text-secondary);
 	}
 
-	.tag-dir-btn.active {
+	.tag-pill.active {
 		background: var(--accent);
 		color: var(--bg-primary);
 		border-color: var(--accent);
 		font-weight: 700;
 	}
 
-	/* Note List */
-	.note-list {
-		flex: 1;
-		overflow-y: auto;
-	}
+	/* ── Note list ───────────────────────────────────── */
+	.note-list { flex: 1; overflow-y: auto; }
 
-	.empty-list-state {
+	.empty-list {
 		padding: 2.5rem 1rem;
 		text-align: center;
 		color: var(--text-tertiary);
-		font-size: 0.8rem;
+		font-size: 0.82rem;
 	}
 
 	.note-item {
 		cursor: pointer;
-		padding: 0.6rem 1rem;
+		padding: 0.65rem 1rem;
 		border-bottom: 1px solid var(--border);
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
+		gap: 0.5rem;
 		outline: none;
-		transition: all 0.15s ease;
+		transition: background 0.15s;
 	}
 
-	.note-item:hover {
-		background-color: var(--bg-tertiary);
-	}
+	.note-item:hover  { background: var(--bg-tertiary); }
+	.note-item.active { background: var(--selection); }
 
-	.note-item.active {
-		background-color: var(--selection);
-	}
-
-	.note-info {
+	.note-meta {
 		flex: 1;
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
+		gap: 3px;
 	}
 
-	.note-row-top {
+	.note-top-row {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		gap: 0.5rem;
 	}
 
-	.git-status-prefix-active {
-		color: var(--accent);
-		font-weight: 700;
-		margin-right: 2px;
-	}
-
-	.git-status-prefix-inactive {
-		margin-right: 2px;
-		color: transparent;
-	}
-
 	.note-title {
+		font-size: 0.83rem;
 		font-weight: 500;
 		color: var(--text-secondary);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		font-size: 0.8rem;
 		flex: 1;
 	}
 
-	.note-title.active-title {
-		color: var(--text-primary);
-		font-weight: 700;
-	}
+	.note-item.active .note-title { color: var(--text-primary); font-weight: 700; }
 
-	.note-balance-delta {
+	.note-balance {
 		font-size: 0.75rem;
 		font-weight: 700;
+		white-space: nowrap;
 	}
 
-	.note-balance-delta.pos {
-		color: var(--income);
-	}
+	.note-balance.pos { color: var(--income); }
+	.note-balance.neg { color: var(--expense); }
 
-	.note-balance-delta.neg {
-		color: var(--expense);
-	}
-
-	.note-row-bottom {
+	.note-bottom-row {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		gap: 0.5rem;
-		padding-left: 12px;
 	}
 
 	.note-date {
-		font-size: 0.65rem;
+		font-size: 0.68rem;
 		color: var(--text-tertiary);
 	}
 
-	.note-item-tags {
+	.note-tags {
 		display: flex;
-		gap: 0.25rem;
-		align-items: center;
+		gap: 3px;
 	}
 
-	.note-item-tag {
-		font-size: 0.6rem;
-		color: #ff9f43;
-		background: rgba(255, 159, 67, 0.1);
-		border: 1px solid rgba(255, 159, 67, 0.2);
-		padding: 0px 4px;
-		border-radius: 2px;
-		font-weight: 500;
+	.note-tag {
+		font-size: 0.62rem;
+		color: #fb923c;
+		background: rgba(251,146,60,.1);
+		border: 1px solid rgba(251,146,60,.2);
+		padding: 1px 5px;
+		border-radius: 4px;
 	}
 
+	/* Delete button: hidden until hover */
 	.delete-btn {
 		background: none;
 		border: none;
 		color: var(--text-tertiary);
-		cursor: pointer;
-		opacity: 0;
-		transition: all 0.2s ease;
-		padding: 4px;
-		border-radius: 4px;
+		padding: 5px;
+		border-radius: var(--radius-sm);
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		margin-left: 0.5rem;
+		opacity: 0;
+		transition: opacity 0.2s, color 0.2s, background 0.2s;
 	}
 
-	.note-item:hover .delete-btn {
-		opacity: 1;
-	}
+	.note-item:hover .delete-btn { opacity: 1; }
 
 	.delete-btn:hover {
 		color: var(--expense);
-		background: rgba(255, 51, 102, 0.1);
-		border-color: var(--expense);
+		background: rgba(248,113,113,.1);
 	}
 </style>
