@@ -3,6 +3,7 @@
 	import Editor from '$lib/components/Editor.svelte';
 	import { notes } from '$lib/stores/notes';
 	import { pwa } from '$lib/stores/pwa.svelte';
+	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
 
 	let selectedNoteId = $state<number | null>(null);

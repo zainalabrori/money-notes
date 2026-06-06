@@ -238,6 +238,12 @@
 
 <style>
 	/* ── Sidebar shell ───────────────────────────────── */
+	/*
+	 * Pakai transform + width:0 trick:
+	 * - Saat terbuka  : width 280px, transform none  → mengambil space di flex
+	 * - Saat collapsed: width 0,     overflow hidden  → tidak mengambil space
+	 * Satu pendekatan untuk semua breakpoint, tidak perlu margin hack.
+	 */
 	.sidebar {
 		width: 280px;
 		flex-shrink: 0;
@@ -245,34 +251,32 @@
 		flex-direction: column;
 		background: var(--bg-secondary);
 		border-right: 1px solid var(--border);
-		transition:
-			width 0.3s cubic-bezier(.4,0,.2,1),
-			margin-left 0.3s cubic-bezier(.4,0,.2,1),
-			border-right-color 0.3s cubic-bezier(.4,0,.2,1);
+		overflow: hidden;
+		transition: width 0.3s cubic-bezier(.4,0,.2,1);
 		z-index: 5;
 	}
 
 	.sidebar.collapsed {
 		width: 0;
-		margin-left: -280px;
-		border-right-color: transparent;
-		overflow: hidden;
+		border-right-width: 0;
 	}
 
+	/* Mobile: sidebar jadi overlay di atas konten */
 	@media (max-width: 600px) {
 		.sidebar {
 			position: absolute;
+			width: 280px; /* selalu 280px di mobile, pakai transform untuk hide/show */
 			height: 100%;
 			left: 0;
 			box-shadow: 4px 0 24px rgba(0,0,0,.6);
 			transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+			overflow: hidden; /* jangan auto — cegah scroll body merembes */
 		}
 
 		.sidebar.collapsed {
+			width: 280px;       /* reset override dari desktop */
+			border-right-width: 1px;
 			transform: translateX(-100%);
-			width: 280px;
-			margin-left: 0;
-			border-right: 1px solid var(--border);
 		}
 	}
 
