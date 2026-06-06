@@ -271,6 +271,7 @@
 			box-shadow: 4px 0 24px rgba(0,0,0,.6);
 			transition: transform 0.3s cubic-bezier(.4,0,.2,1);
 			overflow: hidden; /* jangan auto — cegah scroll body merembes */
+			z-index: 10; /* harus di atas backdrop (z-index: 9) */
 		}
 
 		.sidebar.collapsed {
