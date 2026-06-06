@@ -2,7 +2,6 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import Editor from '$lib/components/Editor.svelte';
 	import { notes } from '$lib/stores/notes';
-	import { fade } from 'svelte/transition';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { onMount } from 'svelte';
 
@@ -138,15 +137,16 @@
 <div class="app-container">
 	<Sidebar bind:selectedNoteId bind:isSidebarVisible />
 
-	<!-- Mobile backdrop: tap to close sidebar -->
-	{#if isSidebarVisible}
-		<div
-			class="sidebar-backdrop"
-			onclick={toggleSidebar}
-			role="none"
-			transition:fade={{ duration: 150 }}
-		></div>
-	{/if}
+	<!--
+		Mobile-only backdrop: rendered when sidebar is open so tapping outside
+		closes it. CSS keeps it display:none on desktop, so no visual effect there.
+	-->
+	<div
+		class="sidebar-backdrop"
+		class:visible={isSidebarVisible}
+		onclick={toggleSidebar}
+		role="none"
+	></div>
 
 	<main class="main-content">
 		<!-- Top bar: app name + action buttons -->
@@ -310,8 +310,9 @@
 	}
 
 	/* ── Mobile backdrop ──────────────────────────────── */
+	/* Always in DOM but invisible — only activates on mobile when .visible */
 	.sidebar-backdrop {
-		display: none;
+		display: none; /* hidden on desktop entirely */
 	}
 
 	@media (max-width: 600px) {
@@ -319,9 +320,18 @@
 			display: block;
 			position: fixed;
 			inset: 0;
+			/* Invisible by default; fades in when sidebar opens */
+			background: rgba(0, 0, 0, 0);
+			backdrop-filter: blur(0px);
+			z-index: 9;
+			pointer-events: none;
+			transition: background 0.2s, backdrop-filter 0.2s;
+		}
+
+		.sidebar-backdrop.visible {
 			background: rgba(0, 0, 0, 0.45);
 			backdrop-filter: blur(2px);
-			z-index: 9;
+			pointer-events: auto;
 		}
 
 		.action-btn {
